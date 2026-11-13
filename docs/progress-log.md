@@ -143,3 +143,14 @@ Note: The ALU has passed the initial tests but has not completed full verificati
 - Status: All 12 directed tests passed successfully.
 - Simulation: https://www.edaplayground.com/x/MgPj
 - Next step: Implement and verify the Next PC Logic.
+
+## Next PC Logic Verification — November 13, 2026
+
+- Implemented next PC address selection for sequential execution, branches, JAL, and JALR.
+- Supports PC + 4, PC-relative targets, and register-relative jump targets.
+- Implemented JALR target alignment by clearing bit 0.
+- Completed 16 directed verification tests.
+- Results: 16 passed, 0 failed.
+- Status: All 16 directed tests passed successfully.
+- Simulation: https://www.edaplayground.com/x/Z2jr
+- Next step: Implement and verify Instruction Memory.
