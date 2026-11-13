@@ -218,3 +218,17 @@ https://www.edaplayground.com/x/aAP4
 - Status: Arithmetic and branch loop integration test passed successfully.
 - Testbench: tb/processor_arithmetic_loop_tb.v
 - Next step: Strengthen processor-level verification and review remaining RV32I instruction coverage.
+
+- ## Processor Safety Integration Test — November 14, 2026
+
+- Executed the fifth RV32I processor integration test.
+- Verified rejection of an unsupported instruction encoding.
+- Tested misaligned LW and SW memory accesses.
+- Confirmed that invalid operations stop program counter progression in the current design.
+- Verified that rejected operations do not produce unintended register or memory updates in the tested cases.
+- Completed 18 directed integration checks.
+- Results: 18 passed, 0 failed.
+- Status: Processor safety integration test passed.
+- Testbench: tb/processor_safety_tb.v
+- Note: This test verifies the current design's invalid-operation handling, not complete RISC-V exception or trap support.
+- Next step: Review remaining RV32I instruction coverage and identify architectural gaps.
