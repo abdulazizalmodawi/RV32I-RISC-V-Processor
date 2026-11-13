@@ -132,3 +132,14 @@ Note: The ALU has passed the initial tests but has not completed full verificati
 - Status: All 20 directed tests passed successfully.
 - Simulation: https://www.edaplayground.com/x/M9cM
 - Next step: Implement and verify the Program Counter (PC).
+
+## Program Counter Verification — November 13, 2026
+
+- Implemented a 32-bit Program Counter (PC) register.
+- Supports synchronous active-high reset and PC write enable.
+- Allows loading sequential, branch, and jump target addresses.
+- Completed 12 directed verification tests.
+- Results: 12 passed, 0 failed.
+- Status: All 12 directed tests passed successfully.
+- Simulation: https://www.edaplayground.com/x/MgPj
+- Next step: Implement and verify the Next PC Logic.
