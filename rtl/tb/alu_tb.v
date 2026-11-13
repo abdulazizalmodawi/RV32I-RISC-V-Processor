@@ -2,8 +2,8 @@
 
 module alu_tb;
 
-  reg  [31:0] a, b;
-  reg  [3:0]  alu_op;
+  reg [31:0] a, b;
+  reg [3:0] alu_op;
   wire [31:0] result;
 
   integer passed = 0;
@@ -19,7 +19,7 @@ module alu_tb;
   task check;
     input [31:0] test_a;
     input [31:0] test_b;
-    input [3:0]  test_op;
+    input [3:0] test_op;
     input [31:0] expected;
     begin
       a = test_a;
@@ -41,6 +41,7 @@ module alu_tb;
   initial begin
     $display("Starting ALU verification...");
 
+    // Basic operation tests
     check(32'd20, 32'd10, 4'd0, 32'd30);
     check(32'd20, 32'd10, 4'd1, 32'd10);
     check(32'hF0F0, 32'h0FF0, 4'd2, 32'h00F0);
@@ -52,11 +53,29 @@ module alu_tb;
     check(32'hFFFFFFFF, 32'd1, 4'd8, 32'd1);
     check(32'hFFFFFFFF, 32'd1, 4'd9, 32'd0);
 
+    // Arithmetic boundary tests
+    check(32'hFFFFFFFF, 32'd1, 4'd0, 32'h00000000);
+    check(32'h7FFFFFFF, 32'd1, 4'd0, 32'h80000000);
+    check(32'd0, 32'd1, 4'd1, 32'hFFFFFFFF);
+    check(32'h80000000, 32'd1, 4'd1, 32'h7FFFFFFF);
+
+    // Signed and unsigned comparisons
+    check(32'h80000000, 32'd0, 4'd8, 32'd1);
+    check(32'h7FFFFFFF, 32'h80000000, 4'd8, 32'd0);
+    check(32'hFFFFFFFF, 32'd0, 4'd9, 32'd0);
+    check(32'd0, 32'hFFFFFFFF, 4'd9, 32'd1);
+
+    // Shift boundary tests
+    check(32'd1, 32'd31, 4'd5, 32'h80000000);
+    check(32'h80000000, 32'd31, 4'd6, 32'd1);
+    check(32'h80000000, 32'd31, 4'd7, 32'hFFFFFFFF);
+    check(32'hFFFFFFFF, 32'd32, 4'd5, 32'hFFFFFFFF);
+
     $display("--------------------------");
     $display("Passed: %0d", passed);
     $display("Failed: %0d", failed);
 
-    if (failed == 0)
+    if (failed == 0 && passed == 22)
       $display("ALU VERIFICATION PASSED");
     else
       $fatal(1, "ALU VERIFICATION FAILED");
