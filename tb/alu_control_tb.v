@@ -1,103 +1,92 @@
 `timescale 1ns / 1ps
 
-module alu_control_tb;
+module control_unit_tb;
 
   reg [6:0] opcode;
-  reg [1:0] alu_op;
-  reg [2:0] funct3;
-  reg [6:0] funct7;
 
-  wire [3:0] alu_sel;
+  wire reg_write;
+  wire alu_src;
+  wire alu_a_sel;
+  wire mem_read;
+  wire mem_write;
+  wire branch;
+  wire jump;
+  wire jalr;
+  wire [1:0] alu_op;
+  wire [1:0] wb_sel;
   wire valid;
 
   integer passed = 0;
   integer failed = 0;
 
-  alu_control dut (
+  wire [12:0] actual;
+
+  control_unit dut (
     .opcode(opcode),
+    .reg_write(reg_write),
+    .alu_src(alu_src),
+    .alu_a_sel(alu_a_sel),
+    .mem_read(mem_read),
+    .mem_write(mem_write),
+    .branch(branch),
+    .jump(jump),
+    .jalr(jalr),
     .alu_op(alu_op),
-    .funct3(funct3),
-    .funct7(funct7),
-    .alu_sel(alu_sel),
+    .wb_sel(wb_sel),
     .valid(valid)
   );
 
+  assign actual = {
+    reg_write, alu_src, alu_a_sel,
+    mem_read, mem_write, branch,
+    jump, jalr, alu_op, wb_sel, valid
+  };
+
   task check;
     input [6:0] test_opcode;
-    input [1:0] test_alu_op;
-    input [2:0] test_funct3;
-    input [6:0] test_funct7;
-    input [3:0] expected_sel;
-    input expected_valid;
+    input [12:0] expected;
     begin
       opcode = test_opcode;
-      alu_op = test_alu_op;
-      funct3 = test_funct3;
-      funct7 = test_funct7;
       #10;
 
-      if (alu_sel === expected_sel &&
-          valid === expected_valid) begin
+      if (actual === expected) begin
         passed = passed + 1;
-        $display("PASS: ALU select=%d valid=%b",
-                 alu_sel, valid);
+        $display("PASS: opcode=%b", opcode);
       end else begin
         failed = failed + 1;
-        $display("FAIL: expected=%d/%b actual=%d/%b",
-                 expected_sel, expected_valid,
-                 alu_sel, valid);
+        $display("FAIL: opcode=%b expected=%b actual=%b",
+                 opcode, expected, actual);
       end
     end
   endtask
 
   initial begin
-    $display("Starting ALU Control verification...");
+    $display("Starting Control Unit verification...");
 
-    // R-Type operations
-    check(7'b0110011,2'b10,3'b000,7'b0000000,4'd0,1'b1);
-    check(7'b0110011,2'b10,3'b000,7'b0100000,4'd1,1'b1);
-    check(7'b0110011,2'b10,3'b111,7'b0000000,4'd2,1'b1);
-    check(7'b0110011,2'b10,3'b110,7'b0000000,4'd3,1'b1);
-    check(7'b0110011,2'b10,3'b100,7'b0000000,4'd4,1'b1);
-    check(7'b0110011,2'b10,3'b001,7'b0000000,4'd5,1'b1);
-    check(7'b0110011,2'b10,3'b101,7'b0000000,4'd6,1'b1);
-    check(7'b0110011,2'b10,3'b101,7'b0100000,4'd7,1'b1);
-    check(7'b0110011,2'b10,3'b010,7'b0000000,4'd8,1'b1);
-    check(7'b0110011,2'b10,3'b011,7'b0000000,4'd9,1'b1);
+    // Valid instruction categories
+    check(7'b0110011, 13'b10000000_10_00_1); // R-Type
+    check(7'b0010011, 13'b11000000_10_00_1); // I-Type
+    check(7'b0000011, 13'b11010000_00_01_1); // LOAD
+    check(7'b0100011, 13'b01001000_00_00_1); // STORE
+    check(7'b1100011, 13'b00000100_01_00_1); // BRANCH
+    check(7'b1101111, 13'b10000010_00_10_1); // JAL
+    check(7'b1100111, 13'b11000011_00_10_1); // JALR
+    check(7'b0110111, 13'b10000000_00_11_1); // LUI
+    check(7'b0010111, 13'b11100000_00_00_1); // AUIPC
 
-    // I-Type operations
-    check(7'b0010011,2'b10,3'b000,7'b1111111,4'd0,1'b1);
-    check(7'b0010011,2'b10,3'b111,7'b0000000,4'd2,1'b1);
-    check(7'b0010011,2'b10,3'b110,7'b0000000,4'd3,1'b1);
-    check(7'b0010011,2'b10,3'b100,7'b0000000,4'd4,1'b1);
-    check(7'b0010011,2'b10,3'b010,7'b0000000,4'd8,1'b1);
-    check(7'b0010011,2'b10,3'b011,7'b0000000,4'd9,1'b1);
-    check(7'b0010011,2'b10,3'b001,7'b0000000,4'd5,1'b1);
-    check(7'b0010011,2'b10,3'b101,7'b0000000,4'd6,1'b1);
-    check(7'b0010011,2'b10,3'b101,7'b0100000,4'd7,1'b1);
-
-    // Branch comparisons
-    check(7'b1100011,2'b01,3'b000,7'b0000000,4'd1,1'b1);
-    check(7'b1100011,2'b01,3'b001,7'b0000000,4'd1,1'b1);
-    check(7'b1100011,2'b01,3'b100,7'b0000000,4'd8,1'b1);
-    check(7'b1100011,2'b01,3'b101,7'b0000000,4'd8,1'b1);
-    check(7'b1100011,2'b01,3'b110,7'b0000000,4'd9,1'b1);
-    check(7'b1100011,2'b01,3'b111,7'b0000000,4'd9,1'b1);
-
-    // Invalid combinations
-    check(7'b0110011,2'b10,3'b000,7'b0000001,4'd0,1'b0);
-    check(7'b0010011,2'b10,3'b001,7'b0100000,4'd0,1'b0);
-    check(7'b1100011,2'b01,3'b010,7'b0000000,4'd0,1'b0);
-    check(7'b0110011,2'b11,3'b000,7'b0000000,4'd0,1'b0);
+    // Unsupported opcodes
+    check(7'b1111111, 13'b00000000_00_00_0);
+    check(7'b0000000, 13'b00000000_00_00_0);
+    check(7'b1110011, 13'b00000000_00_00_0);
 
     $display("--------------------------");
     $display("Passed: %0d", passed);
     $display("Failed: %0d", failed);
 
-    if (passed == 29 && failed == 0)
-      $display("ALU CONTROL VERIFICATION PASSED");
+    if (passed == 12 && failed == 0)
+      $display("CONTROL UNIT VERIFICATION PASSED");
     else
-      $fatal(1, "ALU CONTROL VERIFICATION FAILED");
+      $fatal(1, "CONTROL UNIT VERIFICATION FAILED");
 
     $finish;
   end
