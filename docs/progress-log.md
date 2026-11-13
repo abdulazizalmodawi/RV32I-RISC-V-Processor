@@ -154,3 +154,15 @@ Note: The ALU has passed the initial tests but has not completed full verificati
 - Status: All 16 directed tests passed successfully.
 - Simulation: https://www.edaplayground.com/x/Z2jr
 - Next step: Implement and verify Instruction Memory.
+
+## Instruction Memory Verification — November 13, 2026
+
+- Implemented a 32-bit instruction memory with 256 words (1 KiB).
+- Supports asynchronous instruction fetching using the Program Counter.
+- Implemented instruction address alignment and memory range checks.
+- Initialized unused memory locations with NOP instructions.
+- Completed 16 directed verification tests.
+- Results: 16 passed, 0 failed.
+- Status: All 16 directed tests passed successfully.
+- Simulation: https://www.edaplayground.com/x/C2TE
+- Next step: Implement and verify Data Memory.
