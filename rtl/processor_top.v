@@ -12,6 +12,8 @@ module processor_top (
   wire branch_valid;
   wire memory_valid;
   wire encoding_valid;
+  wire target_alignment_valid;
+  wire control_transfer;
 
   wire reg_write;
   wire alu_src;
@@ -115,43 +117,9 @@ module processor_top (
     .valid(branch_valid)
   );
 
-  // Reject invalid JALR funct3 encodings
+  // Validate JALR instruction encoding
   assign encoding_valid =
       (!jalr || instruction[14:12] == 3'b000);
-
-  // Preliminary instruction validity
-  assign decode_valid =
-      instruction_valid &&
-      control_valid &&
-      alu_valid &&
-      encoding_valid &&
-      (!branch || branch_valid);
-
-  assign memory_read_enable = mem_read && decode_valid;
-  assign memory_write_enable = mem_write && decode_valid;
-
-  // Load and store execution
-  data_memory dmem (
-    .clk(clk),
-    .mem_read(memory_read_enable),
-    .mem_write(memory_write_enable),
-    .funct3(instruction[14:12]),
-    .address(alu_result),
-    .write_data(rs2_data),
-    .read_data(memory_data),
-    .valid(memory_valid)
-  );
-
-  // Prevent architectural updates for invalid accesses
-  assign execution_valid = decode_valid && memory_valid;
-  assign register_write_enable = reg_write && execution_valid;
-
-  // Writeback selection
-  assign writeback_data =
-      (wb_sel == 2'b00) ? alu_result :
-      (wb_sel == 2'b01) ? memory_data :
-      (wb_sel == 2'b10) ? (pc + 32'd4) :
-                          immediate;
 
   // Next instruction address
   next_pc_logic next_pc_unit (
@@ -163,6 +131,53 @@ module processor_top (
     .jalr(jalr),
     .next_pc(next_pc)
   );
+
+  // Check taken branch and jump target alignment
+  // RV32I requires 4-byte instruction alignment
+  assign control_transfer =
+      jump || (branch && branch_taken);
+
+  assign target_alignment_valid =
+      !control_transfer ||
+      (next_pc[1:0] == 2'b00);
+
+  // Preliminary instruction validity
+  assign decode_valid =
+      instruction_valid &&
+      control_valid &&
+      alu_valid &&
+      encoding_valid &&
+      (!branch || branch_valid) &&
+      target_alignment_valid;
+
+  assign memory_read_enable = mem_read && decode_valid;
+  assign memory_write_enable = mem_write && decode_valid;
+
+  // Data memory
+  data_memory dmem (
+    .clk(clk),
+    .mem_read(memory_read_enable),
+    .mem_write(memory_write_enable),
+    .funct3(instruction[14:12]),
+    .address(alu_result),
+    .write_data(rs2_data),
+    .read_data(memory_data),
+    .valid(memory_valid)
+  );
+
+  // Prevent architectural updates for invalid operations
+  assign execution_valid =
+      decode_valid && memory_valid;
+
+  assign register_write_enable =
+      reg_write && execution_valid;
+
+  // Writeback selection
+  assign writeback_data =
+      (wb_sel == 2'b00) ? alu_result :
+      (wb_sel == 2'b01) ? memory_data :
+      (wb_sel == 2'b10) ? (pc + 32'd4) :
+                          immediate;
 
   // Program Counter
   program_counter pc_reg (
