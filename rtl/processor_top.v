@@ -11,6 +11,7 @@ module processor_top (
   wire alu_valid;
   wire branch_valid;
   wire memory_valid;
+  wire encoding_valid;
 
   wire reg_write;
   wire alu_src;
@@ -114,11 +115,16 @@ module processor_top (
     .valid(branch_valid)
   );
 
+  // Reject invalid JALR funct3 encodings
+  assign encoding_valid =
+      (!jalr || instruction[14:12] == 3'b000);
+
   // Preliminary instruction validity
   assign decode_valid =
       instruction_valid &&
       control_valid &&
       alu_valid &&
+      encoding_valid &&
       (!branch || branch_valid);
 
   assign memory_read_enable = mem_read && decode_valid;
