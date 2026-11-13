@@ -262,3 +262,16 @@ https://www.edaplayground.com/x/aAP4
 - Status: Instruction target alignment fix passed all directed tests.
 - Note: Misaligned targets currently halt PC advancement; full RISC-V exception and trap handling is not implemented.
 - Next step: Review remaining illegal instruction encodings and RV32I coverage.
+
+## Illegal Memory Encoding Validation — November 14, 2026
+
+- Reviewed RV32I branch, control, and memory validation logic.
+- Verified rejection of unsupported LOAD and STORE funct3 encodings.
+- Confirmed that rejected memory instructions do not advance the PC.
+- Verified that rejected STORE operations do not modify data memory.
+- Completed 12 directed checks: 12 passed, 0 failed.
+- Testbench: tb/processor_memory_encoding_tb.v
+- Total unique directed checks recorded: 330.
+- Status: Validation of supported instruction encodings completed for the reviewed cases.
+- Remaining RV32I work: broader illegal-encoding coverage, FENCE/SYSTEM support decisions, and architectural exception handling.
+- Next major development phase: 5-stage pipelined processor.
