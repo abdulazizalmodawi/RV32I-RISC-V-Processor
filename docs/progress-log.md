@@ -103,3 +103,12 @@ Note: The ALU has passed the initial tests but has not completed full verificati
 - Status: All 29 directed tests passed successfully.
 - Next step: Implement and verify the Control Unit.
 - Simulation: https://www.edaplayground.com/x/a_9j
+
+- ## Control Unit Verification — November 13, 2026
+
+- Implemented the main control unit for nine RV32I instruction categories.
+- Completed 12 directed verification tests.
+- Results: 12 passed, 0 failed.
+- Simulation: https://www.edaplayground.com/x/RMgZ
+- Status: All 12 directed tests passed successfully.
+- Next step: Implement and verify the ALU Control unit.
