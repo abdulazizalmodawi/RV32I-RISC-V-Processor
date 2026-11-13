@@ -82,3 +82,14 @@ Note: The ALU has passed the initial tests but has not completed full verificati
 - Status: All 22 directed tests passed successfully.
 - Simulation: https://www.edaplayground.com/x/d2Ck
 - Next step: Implement and verify the 32 x 32-bit Register File.
+
+- ## Register File Verification — November 13, 2026
+
+- Implemented a 32 x 32-bit register file.
+- Supports two asynchronous read ports and one synchronous write port.
+- Register x0 is hardwired to zero.
+- Implemented active-high synchronous reset.
+- Completed 11 directed verification tests.
+- Results: 11 passed, 0 failed.
+- Status: All 11 directed tests passed successfully.
+- Next step: Implement and verify the Immediate Generator.
