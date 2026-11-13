@@ -93,3 +93,12 @@ Note: The ALU has passed the initial tests but has not completed full verificati
 - Results: 11 passed, 0 failed.
 - Status: All 11 directed tests passed successfully.
 - Next step: Implement and verify the Immediate Generator.
+
+## Immediate Generator Verification — November 13, 2026
+
+- Implemented immediate extraction for RV32I instruction formats: I, S, B, U, and J.
+- Supports sign extension and branch/jump offsets.
+- Completed 29 directed verification tests.
+- Results: 29 passed, 0 failed.
+- Status: All 29 directed tests passed successfully.
+- Next step: Implement and verify the Control Unit.
