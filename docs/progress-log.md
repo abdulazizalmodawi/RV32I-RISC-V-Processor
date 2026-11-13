@@ -49,3 +49,26 @@ No RTL simulations have been performed yet.
 ## 6. Next Action
 
 Correct the documentation folder structure and review the processor architecture before RTL development.
+
+## ALU Verification — Initial Test Run
+
+**Module:** rtl/alu.v  
+**Testbench:** tb/alu_tb.v  
+**Simulator:** Icarus Verilog 12.0
+
+### Test Results
+
+- Tests Passed: 10
+- Tests Failed: 0
+- Status: PASS — Initial Directed Tests
+- Simulation: https://www.edaplayground.com/x/d2Ck
+
+### Remaining Tasks
+
+- Add boundary-value tests.
+- Test arithmetic overflow and wraparound.
+- Verify signed and unsigned edge cases.
+- Test shift limits.
+- Resolve the timescale warning.
+
+Note: The ALU has passed the initial tests but has not completed full verification.
