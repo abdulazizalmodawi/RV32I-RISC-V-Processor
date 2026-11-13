@@ -180,3 +180,16 @@ https://www.edaplayground.com/x/aAP4
 - Status: First processor integration test passed successfully.
 - Simulation: https://www.edaplayground.com/x/9Ndj
 - Next step: Expand processor-level instruction coverage and test additional programs.
+
+## Extended Processor Integration Test — November 13, 2026
+
+- Executed a second RV32I processor integration program.
+- Verified arithmetic, logical, shift, and comparison operations.
+- Tested LUI, AUIPC, byte memory access, BNE, and JALR instructions.
+- Completed 21 directed integration checks.
+- Results: 21 passed, 0 failed.
+- Status: Extended processor integration test passed successfully.
+- Testbench: tb/processor_extended_tb.v
+- Simulation: https://www.edaplayground.com/x/9Ndj
+- Note: The simulation link was reused for the second test. Both integration testbenches are preserved separately in GitHub.
+- Next step: Expand instruction coverage and strengthen processor-level verification.
