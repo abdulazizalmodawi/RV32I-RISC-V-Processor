@@ -193,3 +193,15 @@ https://www.edaplayground.com/x/aAP4
 - Simulation: https://www.edaplayground.com/x/9Ndj
 - Note: The simulation link was reused for the second test. Both integration testbenches are preserved separately in GitHub.
 - Next step: Expand instruction coverage and strengthen processor-level verification.
+
+## Memory and Branch Integration Test — November 13, 2026
+
+- Executed the third RV32I processor integration program.
+- Verified signed and unsigned halfword memory operations (SH, LH, LHU).
+- Tested signed and unsigned branch instructions: BLT, BGE, BLTU, and BGEU.
+- Verified JAL execution and return-address writeback.
+- Completed 16 directed integration checks.
+- Results: 16 passed, 0 failed.
+- Status: Memory and branch integration test passed successfully.
+- Testbench: tb/processor_memory_branch_tb.v
+- Next step: Expand processor-level verification with additional programs and edge cases.
