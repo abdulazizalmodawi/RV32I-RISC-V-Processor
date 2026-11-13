@@ -28,7 +28,6 @@ module immediate_generator_tb;
         failed = failed + 1;
         $display("FAIL: instr=%h expected=%h actual=%h",
                  instruction, expected, immediate);
-        failed = failed + 1;
       end
     end
   endtask
