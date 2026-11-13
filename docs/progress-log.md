@@ -121,3 +121,14 @@ Note: The ALU has passed the initial tests but has not completed full verificati
 - Status: All 29 directed tests passed successfully.
 - Simulation: https://www.edaplayground.com/x/iUDh
 - Next step: Implement and verify the Branch Control unit.
+
+## Branch Control Verification — November 13, 2026
+
+- Implemented branch decision logic for six RV32I branch instructions: BEQ, BNE, BLT, BGE, BLTU, and BGEU.
+- Supports signed and unsigned comparisons.
+- Implemented branch enable control and invalid condition detection.
+- Completed 20 directed verification tests.
+- Results: 20 passed, 0 failed.
+- Status: All 20 directed tests passed successfully.
+- Simulation: https://www.edaplayground.com/x/M9cM
+- Next step: Implement and verify the Program Counter (PC).
