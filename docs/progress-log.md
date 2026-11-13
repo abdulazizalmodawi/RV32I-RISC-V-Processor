@@ -72,3 +72,13 @@ Correct the documentation folder structure and review the processor architecture
 - Resolve the timescale warning.
 
 Note: The ALU has passed the initial tests but has not completed full verification.
+
+## ALU Extended Verification — November 13, 2026
+
+- Implemented a 32-bit ALU supporting 10 operations.
+- Completed 22 directed test cases, including arithmetic boundary conditions, signed and unsigned comparisons, and shift edge cases.
+- Simulation tool: Icarus Verilog 12.0 via EDA Playground.
+- Results: 22 passed, 0 failed.
+- Status: All 22 directed tests passed successfully.
+- Simulation: https://www.edaplayground.com/x/d2Ck
+- Next step: Implement and verify the 32 x 32-bit Register File.
