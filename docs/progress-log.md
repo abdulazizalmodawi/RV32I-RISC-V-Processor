@@ -205,3 +205,16 @@ https://www.edaplayground.com/x/aAP4
 - Status: Memory and branch integration test passed successfully.
 - Testbench: tb/processor_memory_branch_tb.v
 - Next step: Expand processor-level verification with additional programs and edge cases.
+
+## Arithmetic and Branch Loop Integration Test — November 13, 2026
+
+- Executed the fourth RV32I processor integration test program.
+- Verified R-type arithmetic, logic, shift, and comparison instructions.
+- Tested signed and unsigned immediate comparisons.
+- Verified forward BEQ branching and a backward BNE countdown loop.
+- Checked register results, skipped instructions, and final program counter.
+- Completed 24 directed integration checks.
+- Results: 24 passed, 0 failed.
+- Status: Arithmetic and branch loop integration test passed successfully.
+- Testbench: tb/processor_arithmetic_loop_tb.v
+- Next step: Strengthen processor-level verification and review remaining RV32I instruction coverage.
