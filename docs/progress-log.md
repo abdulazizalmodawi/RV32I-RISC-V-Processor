@@ -112,3 +112,12 @@ Note: The ALU has passed the initial tests but has not completed full verificati
 - Simulation: https://www.edaplayground.com/x/RMgZ
 - Status: All 12 directed tests passed successfully.
 - Next step: Implement and verify the ALU Control unit.
+
+## ALU Control Verification — November 13, 2026
+
+- Implemented ALU operation decoding for RV32I arithmetic and branch instructions.
+- Created and executed 29 directed verification tests.
+- Results: 29 passed, 0 failed.
+- Status: All 29 directed tests passed successfully.
+- Simulation: https://www.edaplayground.com/x/iUDh
+- Next step: Implement and verify the Branch Control unit.
