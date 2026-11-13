@@ -166,3 +166,5 @@ Note: The ALU has passed the initial tests but has not completed full verificati
 - Status: All 16 directed tests passed successfully.
 - Simulation: https://www.edaplayground.com/x/C2TE
 - Next step: Implement and verify Data Memory.
+
+https://www.edaplayground.com/x/aAP4
