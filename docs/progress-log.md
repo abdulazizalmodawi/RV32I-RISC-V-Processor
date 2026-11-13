@@ -232,3 +232,17 @@ https://www.edaplayground.com/x/aAP4
 - Testbench: tb/processor_safety_tb.v
 - Note: This test verifies the current design's invalid-operation handling, not complete RISC-V exception or trap support.
 - Next step: Review remaining RV32I instruction coverage and identify architectural gaps.
+
+- ## JALR Encoding Validation and Regression — November 14, 2026
+
+- Reviewed the control unit, ALU control, processor top, and data memory modules.
+- Identified missing JALR funct3 encoding validation.
+- Updated rtl/processor_top.v to reject JALR instructions with funct3 != 000.
+- Added tb/processor_jalr_validation_tb.v.
+- Verified legal and illegal JALR instruction encodings.
+- JALR validation results: 11 passed, 0 failed.
+- Re-ran all five processor integration testbenches after the fix.
+- Regression results: 88 passed, 0 failed.
+- Total unique directed checks recorded: 290.
+- Status: JALR encoding fix verified for the tested cases.
+- Remaining work: instruction-address alignment, additional illegal instruction checks, and unsupported RV32I system/fence instructions.
