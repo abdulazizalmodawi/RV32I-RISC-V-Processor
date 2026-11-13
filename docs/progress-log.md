@@ -246,3 +246,19 @@ https://www.edaplayground.com/x/aAP4
 - Total unique directed checks recorded: 290.
 - Status: JALR encoding fix verified for the tested cases.
 - Remaining work: instruction-address alignment, additional illegal instruction checks, and unsupported RV32I system/fence instructions.
+
+- ## Instruction Address Alignment Fix — November 14, 2026
+
+- Reviewed next_pc_logic.v, instruction_memory.v, and program_counter.v.
+- Identified missing target alignment validation for taken branches and jumps.
+- Updated rtl/processor_top.v to check 4-byte instruction target alignment.
+- Added tb/processor_alignment_tb.v.
+- Verified aligned and misaligned JAL and JALR targets.
+- Verified taken and not-taken BEQ behavior with misaligned targets.
+- Alignment verification: 28 passed, 0 failed.
+- Re-ran six previous processor integration testbenches.
+- Regression verification: 99 passed, 0 failed.
+- Total unique directed checks recorded: 318.
+- Status: Instruction target alignment fix passed all directed tests.
+- Note: Misaligned targets currently halt PC advancement; full RISC-V exception and trap handling is not implemented.
+- Next step: Review remaining illegal instruction encodings and RV32I coverage.
