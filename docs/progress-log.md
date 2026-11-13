@@ -102,3 +102,4 @@ Note: The ALU has passed the initial tests but has not completed full verificati
 - Results: 29 passed, 0 failed.
 - Status: All 29 directed tests passed successfully.
 - Next step: Implement and verify the Control Unit.
+- Simulation: https://www.edaplayground.com/x/a_9j
