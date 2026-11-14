@@ -275,3 +275,18 @@ https://www.edaplayground.com/x/aAP4
 - Status: Validation of supported instruction encodings completed for the reviewed cases.
 - Remaining RV32I work: broader illegal-encoding coverage, FENCE/SYSTEM support decisions, and architectural exception handling.
 - Next major development phase: 5-stage pipelined processor.
+
+## Immediate Boundary Verification — November 14, 2026
+
+- Reviewed the RV32I immediate generator implementation.
+- Verified I-Type immediate boundary values (-2048 and +2047).
+- Tested signed and unsigned immediate comparisons.
+- Verified immediate sign extension in arithmetic and logical operations.
+- Tested LUI and AUIPC immediate handling.
+- Verified a backward branch loop and forward JAL execution.
+- Completed 20 directed checks.
+- Results: 20 passed, 0 failed.
+- Testbench: tb/processor_immediate_boundary_tb.v
+- Total unique directed checks recorded: 350.
+- Status: Immediate boundary verification passed for the tested cases.
+- Remaining work: broader RV32I compliance testing, FENCE/SYSTEM handling decisions, and exception support.
