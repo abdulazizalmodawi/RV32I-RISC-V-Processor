@@ -45,13 +45,13 @@ module control_unit (
 
     case (opcode)
 
-      // R-Type: register arithmetic
+      // R-Type
       7'b0110011: begin
         reg_write = 1'b1;
         alu_op    = 2'b10;
       end
 
-      // I-Type: immediate arithmetic
+      // I-Type arithmetic
       7'b0010011: begin
         reg_write = 1'b1;
         alu_src   = 1'b1;
@@ -105,6 +105,13 @@ module control_unit (
         reg_write = 1'b1;
         alu_src   = 1'b1;
         alu_a_sel = 1'b1;
+      end
+
+      // FENCE: modeled as a NOP in this simple core
+      // Detailed encoding validation is done in processor_top.
+      7'b0001111: begin
+        // Defaults prevent register and memory writes.
+        // PC advances normally.
       end
 
       // Unsupported opcode
