@@ -290,3 +290,18 @@ https://www.edaplayground.com/x/aAP4
 - Total unique directed checks recorded: 350.
 - Status: Immediate boundary verification passed for the tested cases.
 - Remaining work: broader RV32I compliance testing, FENCE/SYSTEM handling decisions, and exception support.
+
+## FENCE Instruction Support — November 15, 2026
+
+- Added simplified FENCE instruction support to rtl/control_unit.v.
+- Updated rtl/processor_top.v to validate FENCE funct3 encodings.
+- Implemented standard FENCE as a no-operation instruction for the current single-cycle core.
+- Added tb/processor_fence_tb.v.
+- Verified FENCE execution and rejection of unsupported FENCE.I and illegal funct3 encodings.
+- FENCE validation: 13 passed, 0 failed.
+- Re-ran nine previous processor integration testbenches.
+- Regression results: 159 passed, 0 failed.
+- Total unique directed checks recorded: 363.
+- Status: Simplified FENCE handling verified for the tested cases.
+- Limitations: Full memory-ordering semantics and additional FENCE encoding constraints have not been verified.
+- Next step: Review ECALL and EBREAK handling before starting the 5-stage pipeline.
