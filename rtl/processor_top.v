@@ -99,7 +99,7 @@ module processor_top (
   assign alu_a = alu_a_sel ? pc : rs1_data;
   assign alu_b = alu_src ? immediate : rs2_data;
 
-  // Arithmetic and logic execution
+  // ALU execution
   alu alu_core (
     .a(alu_a),
     .b(alu_b),
@@ -107,7 +107,7 @@ module processor_top (
     .result(alu_result)
   );
 
-  // Branch decision
+  // Branch comparison
   branch_control branch_unit (
     .branch_en(branch),
     .funct3(instruction[14:12]),
@@ -116,10 +116,6 @@ module processor_top (
     .branch_taken(branch_taken),
     .valid(branch_valid)
   );
-
-  // Validate JALR instruction encoding
-  assign encoding_valid =
-      (!jalr || instruction[14:12] == 3'b000);
 
   // Next instruction address
   next_pc_logic next_pc_unit (
@@ -132,8 +128,17 @@ module processor_top (
     .next_pc(next_pc)
   );
 
-  // Check taken branch and jump target alignment
-  // RV32I requires 4-byte instruction alignment
+  // Validate JALR funct3 and FENCE funct3.
+  // Only standard FENCE (funct3=000) is modeled.
+  // FENCE.I (funct3=001) is not supported.
+  assign encoding_valid =
+      (!jalr || instruction[14:12] == 3'b000) &&
+      ((instruction[6:0] != 7'b0001111) ||
+       (instruction[14:12] == 3'b000));
+
+  // Validate taken branch and jump target alignment.
+  // RV32I without compressed instructions requires
+  // 4-byte instruction address alignment.
   assign control_transfer =
       jump || (branch && branch_taken);
 
@@ -141,7 +146,7 @@ module processor_top (
       !control_transfer ||
       (next_pc[1:0] == 2'b00);
 
-  // Preliminary instruction validity
+  // Instruction validation
   assign decode_valid =
       instruction_valid &&
       control_valid &&
@@ -150,8 +155,12 @@ module processor_top (
       (!branch || branch_valid) &&
       target_alignment_valid;
 
-  assign memory_read_enable = mem_read && decode_valid;
-  assign memory_write_enable = mem_write && decode_valid;
+  // Memory access enables
+  assign memory_read_enable =
+      mem_read && decode_valid;
+
+  assign memory_write_enable =
+      mem_write && decode_valid;
 
   // Data memory
   data_memory dmem (
@@ -165,7 +174,7 @@ module processor_top (
     .valid(memory_valid)
   );
 
-  // Prevent architectural updates for invalid operations
+  // Prevent architectural updates on invalid operations
   assign execution_valid =
       decode_valid && memory_valid;
 
@@ -179,7 +188,7 @@ module processor_top (
       (wb_sel == 2'b10) ? (pc + 32'd4) :
                           immediate;
 
-  // Program Counter
+  // Program counter
   program_counter pc_reg (
     .clk(clk),
     .rst(rst),
