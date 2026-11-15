@@ -305,3 +305,17 @@ https://www.edaplayground.com/x/aAP4
 - Status: Simplified FENCE handling verified for the tested cases.
 - Limitations: Full memory-ordering semantics and additional FENCE encoding constraints have not been verified.
 - Next step: Review ECALL and EBREAK handling before starting the 5-stage pipeline.
+
+## SYSTEM Instruction Validation — November 15, 2026
+
+- Reviewed unsupported SYSTEM instruction behavior in the current RV32I single-cycle processor.
+- Tested ECALL (0x00000073) and EBREAK (0x00100073).
+- Verified that both instructions are rejected by the current control unit.
+- Confirmed that rejected instructions stop PC advancement in the tested cases.
+- Verified that no unintended register or memory updates occur in these tests.
+- Added tb/processor_system_tb.v.
+- Completed 10 directed checks: 10 passed, 0 failed.
+- Total unique directed checks recorded: 373.
+- Status: Unsupported SYSTEM instruction rejection verified for the tested cases.
+- Limitation: Architectural exception and trap handling for ECALL and EBREAK is not implemented.
+- Next step: Assess single-cycle processor readiness for the 5-stage pipeline.
