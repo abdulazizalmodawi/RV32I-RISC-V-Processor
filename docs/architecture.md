@@ -1,437 +1,551 @@
-# RV32I Processor — Architecture Specification
 
-**Project ID:** CPE-RV32-001  
-**Document Version:** 0.2  
-**Status:** Draft — Pending Design Review  
+# RV32I RISC-V Processor — Architecture Documentation
+
+**Project:** RV32I RISC-V Processor  
+**RTL Language:** Verilog HDL  
 **Target ISA:** RISC-V RV32I  
-**RTL Language:** Verilog HDL
+**Data Width:** 32 bits  
+**Verification:** Icarus Verilog / EDA Playground  
+**Status:** Implemented and tested — continued development
 
 ---
 
-## 1. Architecture Overview
+## 1. Project Overview
 
-This project aims to design, implement, and verify a 32-bit RISC-V processor based on the RV32I base integer instruction set.
+This project explores the design, implementation, and verification
+of a 32-bit RISC-V processor using Verilog HDL.
 
-The initial processor will use a single-cycle architecture. Each instruction will complete its execution within one clock cycle.
+Two processor architectures have been implemented:
 
-The design separates the datapath, control logic, register file, and memory interfaces.
+1. **Single-Cycle Processor**
+2. **Five-Stage Pipelined Processor**
 
-After the single-cycle processor is implemented and verified, a five-stage pipelined architecture will be developed as a future extension.
+The single-cycle design establishes the core instruction datapath,
+while the pipelined implementation extends the architecture with
+pipeline registers, forwarding, hazard detection, stalls, and
+control-flow flushing.
+
+The project also includes independently tested experimental modules
+for exception detection and simplified trap control.
+
+Full RV32I architectural compliance has not been established.
+
+---
 
 ## 2. Processor Configuration
 
-- ISA Target: RV32I
-- Data Width (XLEN): 32 bits
-- Instruction Width: 32 bits
-- General-Purpose Registers: 32 registers, each 32 bits
-- Register x0: Hardwired to zero
-- Initial Architecture: Single-Cycle
-- Instruction Alignment: 4 bytes
-- Reset PC: 0x00000000
-- Byte Ordering: Little-Endian
-- Memory Organization: Separate instruction and data memories
-- RTL Language: Verilog HDL
-- Initial Simulation Tool: Icarus Verilog
-
-## 3. Main Hardware Modules
-
-### 3.1 Program Counter (PC)
-
-The Program Counter stores the address of the current instruction.
-
-Responsibilities:
-
-- Store the current instruction address.
-- Increment the PC by 4 during sequential execution.
-- Select branch and jump target addresses.
-- Reset to the configured reset address.
-- Support the selected exception handling behavior.
-
-The PC will be updated on the active clock edge.
-
-### 3.2 Instruction Decoder
-
-The Instruction Decoder identifies the instruction and extracts its fields.
-
-Responsibilities:
-
-- Decode the instruction opcode.
-- Extract rd, rs1, and rs2 register addresses.
-- Decode funct3 and funct7 fields.
-- Identify supported instruction formats.
-- Provide decoded information to the control unit.
-- Detect illegal or unsupported instruction encodings.
-
-### 3.3 Register File
-
-The Register File contains 32 general-purpose registers.
-
-Specifications:
-
-- 32 registers, each 32 bits wide.
-- Two independent read ports.
-- One write port.
-- Register x0 always returns zero.
-- Write operations targeting x0 are ignored.
-- Register writes occur on the active clock edge.
-- Read ports provide combinational outputs.
-
-The initialization and read-during-write behavior will be defined and verified before integration.
-
-### 3.4 Immediate Generator
-
-The Immediate Generator extracts immediate values from instruction fields.
-
-Supported formats:
-
-- I-type
-- S-type
-- B-type
-- U-type
-- J-type
-
-Responsibilities:
-
-- Extract immediate fields.
-- Apply the required sign extension.
-- Reconstruct branch and jump offsets.
-- Generate the correct 32-bit immediate value.
-
-### 3.5 Arithmetic Logic Unit (ALU)
-
-The ALU performs arithmetic, logical, shift, and comparison operations.
-
-Planned operations:
-
-- Addition (ADD)
-- Subtraction (SUB)
-- Bitwise AND
-- Bitwise OR
-- Bitwise XOR
-- Logical Left Shift (SLL)
-- Logical Right Shift (SRL)
-- Arithmetic Right Shift (SRA)
-- Signed Less Than (SLT)
-- Unsigned Less Than (SLTU)
-
-The ALU operates on 32-bit operands.
-
-Shift operations use the lower five bits of the shift amount.
-
-Arithmetic results are limited to 32 bits. Signed overflow does not generate an arithmetic exception for ordinary RV32I integer arithmetic.
-
-The ALU will be verified independently before processor integration.
-
-### 3.6 Control Unit
-
-The Control Unit generates signals that determine how instructions are executed.
-
-Main control signals:
-
-- ALU operation selection
-- ALU input selection
-- Register write enable
-- Memory write enable
-- Memory access size
-- Load sign-extension selection
-- Writeback source selection
-- Branch condition selection
-- Jump selection
-- Illegal instruction indication
-
-The control logic will be implemented and tested independently.
-
-### 3.7 Instruction Memory Interface
-
-The initial processor uses a separate instruction memory.
-
-Specifications:
-
-- 32-bit instruction output.
-- Byte-addressed instruction locations.
-- Little-endian memory representation.
-- Combinational instruction reads in the simulation model.
-- Initial instruction address: 0x00000000.
-- Instruction addresses must be aligned to four bytes.
-
-The memory capacity and valid address range will be determined before RTL implementation.
-
-Invalid or out-of-range instruction accesses must have explicitly defined behavior.
-
-### 3.8 Data Memory Interface
-
-The Data Memory Interface supports load and store instructions.
-
-Specifications:
-
-- Separate byte-addressed data memory.
-- Little-endian byte ordering.
-- Support for byte, halfword, and word accesses.
-- Signed and unsigned load operations.
-- Byte write enables for store operations.
-- Combinational reads in the initial simulation model.
-- Clocked memory writes.
-
-The initial memory model is intended for functional simulation.
-
-Memory size, address mapping, misaligned access behavior, and out-of-range access handling must be defined before integration.
-
-FPGA memory timing requirements will be reviewed separately.
-
-### 3.9 Writeback Logic
-
-The Writeback Logic selects the value written into the destination register.
-
-Possible sources:
-
-- ALU result
-- Loaded memory data
-- PC + 4
-- Upper-immediate-related result
-
-Register writeback is controlled by the instruction decoder and control unit.
-
-Instructions that do not modify a destination register must disable register writeback.
-
-## 4. Single-Cycle Datapath
-
-The processor will use a single-cycle datapath.
-
-The instruction execution flow consists of:
-
-1. Instruction Fetch
-2. Instruction Decode
-3. Register Read
-4. Immediate Generation
-5. ALU Execution
-6. Data Memory Access, if required
-7. Writeback Selection
-8. Register and PC Update
-
-The combinational datapath determines the results within the cycle.
-
-Architectural state updates occur at the active clock edge.
-
-The clock period must accommodate the longest combinational path.
-
-## 5. Control Flow
-
-### 5.1 Sequential Execution
-
-The next instruction address is normally:
-
-PC_next = PC + 4
-
-### 5.2 Conditional Branches
-
-Supported branch instructions:
-
-- BEQ
-- BNE
-- BLT
-- BGE
-- BLTU
-- BGEU
-
-The branch target is calculated using the current PC and the sign-extended branch immediate.
-
-Signed and unsigned comparisons must be handled correctly.
-
-### 5.3 Jump Instructions
-
-JAL:
-
-- Writes PC + 4 to rd.
-- Updates the PC using the jump offset.
-
-JALR:
-
-- Writes PC + 4 to rd.
-- Calculates the target using rs1 and the immediate.
-- Clears bit 0 of the calculated target address.
-
-Misaligned instruction targets must be handled according to the selected exception policy.
-
-## 6. Instruction Set Support
-
-The processor targets the RV32I base integer instruction set.
-
-Planned instruction groups include:
-
-- Register arithmetic and logic
-- Immediate arithmetic and logic
-- Shift and comparison operations
-- Load instructions
-- Store instructions
-- Conditional branches
-- JAL and JALR
-- LUI and AUIPC
-- FENCE
-- ECALL and EBREAK
-
-Instruction encodings, implementation status, and verification coverage are documented separately in:
-
-`docs/instruction-set.md`
-
-Instructions will be implemented incrementally.
-
-No complete RV32I compatibility claim will be made until the required architectural behavior is implemented and verified.
-
-## 7. Exception and System Behavior
-
-The processor must define behavior for:
-
-- Illegal instructions
-- Misaligned instruction targets
-- Misaligned load and store operations
-- Invalid memory accesses in the selected memory model
-- ECALL
-- EBREAK
-- FENCE
-
-Exception detection and trap handling are separate design concerns.
-
-Before RTL integration, the project must specify:
-
-- Exception reporting signals
-- Faulting instruction address reporting
-- Exception cause reporting
-- Architectural state update suppression on faults
-- Trap handling or documented termination behavior
-
-A simulation-only exception reporting mechanism must not be presented as a complete architectural trap implementation.
-
-## 8. Reset and Initialization
-
-The processor will provide a reset input.
-
-Initial reset requirements:
-
-- Reset the PC to 0x00000000.
-- Disable unintended register and memory writes during reset.
-- Ensure deterministic control behavior.
-- Define the initialization strategy for the register file.
-- Load instruction memory before processor execution in simulation.
-
-Only register x0 is architecturally required to remain zero.
-
-Other general-purpose registers must not be assumed to have a defined initial value unless explicitly initialized by the test environment or software.
-
-## 9. Verification Strategy
-
-Verification will be performed at three levels.
-
-### 9.1 Module-Level Verification
-
-Each major module will have an independent, self-checking testbench.
-
-Planned verification targets:
-
-- ALU
-- Register File
-- Program Counter
-- Immediate Generator
-- Instruction Decoder
-- Control Unit
-- Memory Interface
-- Branch and Jump Logic
-
-### 9.2 Instruction-Level Verification
-
-Tests will verify:
-
-- Instruction decoding
-- Arithmetic and logical operations
-- Signed and unsigned comparisons
-- Load and store behavior
-- Branch decisions
-- Jump target calculations
-- Register writeback
-- Relevant boundary conditions
-
-### 9.3 Processor-Level Verification
-
-The integrated processor will execute test programs covering:
-
-- Sequential execution
-- Register dependencies
-- Arithmetic calculations
-- Memory operations
-- Conditional branches
-- Jump instructions
-- Reset behavior
-- Defined exception behavior
-
-Simulation outputs will be compared against expected results.
-
-Test logs, failures, fixes, and final verification results will be documented.
-
-The complete verification strategy is maintained in:
-
-`docs/verification-plan.md`
-
-## 10. Future Pipelined Architecture
-
-After completing and verifying the single-cycle processor, the architecture may be extended into a five-stage pipeline.
-
-Pipeline stages:
-
-1. IF — Instruction Fetch
-2. ID — Instruction Decode
-3. EX — Execute
-4. MEM — Memory Access
-5. WB — Write Back
-
-The pipeline implementation will require:
-
-- Pipeline registers
-- Forwarding logic
-- Hazard detection
-- Pipeline stalls
-- Pipeline flushing
-- Branch and jump handling
-- Exception handling across pipeline stages
-
-The pipelined processor will be verified separately from the single-cycle implementation.
-
-## 11. Development and Documentation Rules
-
-- Use synthesizable Verilog HDL for processor RTL.
-- Separate RTL files from testbench files.
-- Maintain consistent module interfaces and naming conventions.
-- Test modules before integration.
-- Record significant design decisions.
-- Document identified bugs and their fixes.
-- Maintain verification evidence.
-- Track known limitations.
-- Use GitHub for version control.
-- Do not report unverified functionality as completed.
-
-## 12. Pending Design Decisions
-
-The following decisions must be finalized before RTL integration:
-
-1. Instruction memory capacity and address mapping.
-2. Data memory capacity and address mapping.
-3. Memory misalignment policy.
-4. Illegal instruction and exception reporting interface.
-5. ECALL and EBREAK behavior.
-6. FENCE handling.
-7. Register initialization and reset strategy.
-8. Final module interfaces and control signal definitions.
-
-## 13. Document Status
-
-This document describes the proposed RV32I processor architecture.
-
-No RTL implementation or verification result is claimed at this stage.
-
-The architecture remains under review until pending design decisions have been resolved.
-
-**Next Step:** Finalize architectural decisions and module interfaces before beginning ALU implementation.
+| Parameter | Configuration |
+|---|---|
+| Instruction Set Target | RV32I |
+| Data Width (XLEN) | 32 bits |
+| Instruction Width | 32 bits |
+| General-Purpose Registers | 32 × 32-bit |
+| Register x0 | Hardwired to zero |
+| Reset PC | 0x00000000 |
+| Instruction Alignment | 4 bytes |
+| Byte Ordering | Little-endian |
+| Instruction Memory | 256 words (default) |
+| Data Memory | 1024 bytes (default) |
+| Memory Organization | Separate instruction and data memories |
+| RTL | Verilog HDL |
+| Simulation | Icarus Verilog |
+
+The memory implementations are simulation-oriented models with
+combinational reads and clocked data-memory writes.
 
 ---
 
-**Reference:** RISC-V Unprivileged ISA Specification — RV32I Base Integer Instruction Set.
+## 3. Single-Cycle Processor
 
-https://docs.riscv.org/reference/isa/unpriv/rv32.html
+### 3.1 Architecture
+
+The single-cycle processor executes the complete datapath of
+one instruction within a single clock cycle.
+
+Its primary modules are:
+
+- Program Counter
+- Instruction Memory
+- Register File
+- Control Unit
+- ALU Control
+- Arithmetic Logic Unit
+- Immediate Generator
+- Branch Control
+- Next-PC Logic
+- Data Memory
+- Processor Top-Level
+
+### 3.2 Instruction Execution
+
+The datapath performs the following operations:
+
+1. Fetch the instruction using the Program Counter.
+2. Decode the instruction and generate control signals.
+3. Read source operands from the Register File.
+4. Generate an immediate value when required.
+5. Perform arithmetic, comparison, or address calculation.
+6. Access Data Memory for loads and stores.
+7. Select the appropriate writeback result.
+8. Update the architectural registers and Program Counter.
+
+The clock period must accommodate the longest combinational
+path through the processor.
+
+### 3.3 Control Flow
+
+Sequential execution normally advances the PC by four bytes.
+
+Conditional branches and jumps calculate alternative addresses
+using the instruction PC, immediate offset, and/or source register.
+
+JALR clears bit zero of its computed target.
+
+The existing core validates selected encodings and instruction
+target alignment. It does not implement a complete architectural
+exception and trap mechanism.
+
+---
+
+## 4. Five-Stage Pipelined Processor
+
+The pipelined implementation separates instruction processing
+into five stages.
+
+| Stage | Name | Responsibility |
+|---|---|---|
+| IF | Instruction Fetch | Fetch instruction and advance PC |
+| ID | Instruction Decode | Decode instruction and read registers |
+| EX | Execute | ALU, address calculation, branch resolution |
+| MEM | Memory Access | Load and store data |
+| WB | Writeback | Write results to destination registers |
+
+Pipeline registers preserve the data and control information
+associated with each in-flight instruction.
+
+### 4.1 Pipeline Architecture Diagram
+
+```mermaid
+flowchart TD
+    IF["IF: Instruction Fetch"]
+    IFID["IF/ID Register"]
+    ID["ID: Decode and Register Read"]
+    IDEX["ID/EX Register"]
+    EX["EX: ALU and Branch Resolution"]
+    EXMEM["EX/MEM Register"]
+    MEM["MEM: Data Memory"]
+    MEMWB["MEM/WB Register"]
+    WB["WB: Register Writeback"]
+
+    IF --> IFID
+    IFID --> ID
+    ID --> IDEX
+    IDEX --> EX
+    EX --> EXMEM
+    EXMEM --> MEM
+    MEM --> MEMWB
+    MEMWB --> WB
+
+    HAZ["Hazard Detection"]
+    FWD["Forwarding Unit"]
+    FLUSH["Branch Flush Control"]
+
+    IFID -.-> HAZ
+    IDEX -.-> HAZ
+    HAZ -. "PC and IF/ID Stall" .-> IF
+    HAZ -. "Bubble" .-> IDEX
+
+    EXMEM -.-> FWD
+    MEMWB -.-> FWD
+    FWD -. "Forwarded Operands" .-> EX
+
+    EX --> FLUSH
+    FLUSH -. "PC Redirect" .-> IF
+    FLUSH -. "Flush" .-> IFID
+    FLUSH -. "Flush" .-> IDEX
+```
+
+This is a conceptual pipeline diagram, not a gate-level
+schematic or timing-accurate implementation diagram.
+
+### 4.2 Instruction Fetch (IF)
+
+Instruction Memory provides the instruction corresponding to
+the current PC.
+
+The fetch logic normally advances the PC by four bytes.
+
+When a valid branch or jump is resolved in EX, the PC is
+redirected to the calculated target.
+
+Instruction Memory provides a validity signal for aligned,
+in-range fetch addresses.
+
+### 4.3 Instruction Decode (ID)
+
+The Decode stage performs:
+
+- Opcode and instruction-field extraction.
+- Register File reads.
+- Immediate generation.
+- ALU operation selection.
+- Main control-signal generation.
+- Selected instruction encoding checks.
+
+The IF/ID validity register tracks whether the fetched
+instruction should enter the execution pipeline.
+
+A WB-to-ID bypass is included for selected register
+read/write timing dependencies.
+
+### 4.4 Execute (EX)
+
+The Execute stage performs:
+
+- Arithmetic and logical operations.
+- Signed and unsigned comparisons.
+- Load/store address calculation.
+- Branch condition evaluation.
+- JAL and JALR target calculation.
+- Forwarded operand selection.
+
+Branch conditions are evaluated using forwarded source
+operands where required.
+
+### 4.5 Memory Access (MEM)
+
+The Memory stage supports:
+
+- LB, LH, LW
+- LBU, LHU
+- SB, SH, SW
+
+The memory model checks supported access encodings,
+address bounds, and natural alignment.
+
+Invalid accesses are suppressed in the existing
+implementation rather than raising complete
+architectural traps.
+
+### 4.6 Writeback (WB)
+
+The Writeback stage selects the value written to the
+destination register.
+
+| WB Selection | Data Source |
+|---|---|
+| 00 | ALU Result |
+| 01 | Memory Read Data |
+| 10 | PC + 4 |
+| 11 | Immediate Value |
+
+Register writes are gated by pipeline validity and
+write-enable signals.
+
+Writes to register x0 are ignored.
+
+---
+
+## 5. Pipeline Hazard Handling
+
+### 5.1 Data Forwarding
+
+The forwarding unit resolves supported read-after-write
+dependencies using results from later pipeline stages.
+
+Forwarding selection:
+
+| Control | Data Source |
+|---|---|
+| 00 | Original ID/EX Operand |
+| 01 | MEM/WB Writeback Data |
+| 10 | Available EX/MEM Result |
+| 11 | Reserved |
+
+The most recent available result receives priority.
+
+EX/MEM load results are not forwarded before their
+memory data becomes available.
+
+The integrated datapath selects the appropriate forwarded
+value, including relevant writeback sources.
+
+### 5.2 Load-Use Hazard Detection
+
+An immediate dependency on a LOAD result requires a stall.
+
+The hazard detection logic:
+
+1. Holds the PC.
+2. Holds the IF/ID registers.
+3. Flushes ID/EX to insert a bubble.
+4. Allows the older LOAD instruction to progress.
+
+Source-register usage is determined according to
+the decoded instruction type.
+
+### 5.3 Control Hazards
+
+Branches and jumps are resolved in EX.
+
+When a valid control transfer changes execution flow:
+
+1. The PC is redirected.
+2. IF/ID is flushed.
+3. ID/EX receives a bubble.
+4. Wrong-path instructions are prevented from committing.
+
+The control logic gives a valid PC redirect priority
+over an ordinary load-use stall.
+
+### 5.4 Pipeline Validity
+
+Pipeline validity signals distinguish active instructions
+from invalid entries and inserted bubbles.
+
+Write enables are combined with validity checks to
+prevent supported invalid instructions and flushed
+operations from updating architectural state.
+
+---
+
+## 6. Instruction Support
+
+The processor implements tested subsets of the RV32I
+base integer instruction set.
+
+### Arithmetic and Logic
+
+- ADD, SUB
+- AND, OR, XOR
+- SLL, SRL, SRA
+- SLT, SLTU
+- Supported immediate arithmetic and logical operations
+
+### Load and Store
+
+- LB, LH, LW
+- LBU, LHU
+- SB, SH, SW
+
+### Branch and Jump
+
+- BEQ, BNE
+- BLT, BGE
+- BLTU, BGEU
+- JAL, JALR
+
+### Upper Immediate
+
+- LUI
+- AUIPC
+
+### System and Ordering Limitations
+
+- FENCE is modeled as a simplified NOP.
+- ECALL and EBREAK do not have complete trap handling.
+- Full privileged architecture support is not implemented.
+
+Instruction-level details are documented in
+[instruction-set.md](instruction-set.md).
+
+---
+
+## 7. Exception and Trap Development
+
+Experimental modules have been implemented and
+independently tested.
+
+### 7.1 Exception Detection Unit
+
+The exception detection module supports selected
+exception conditions:
+
+| Exception | Cause Code |
+|---|---|
+| Instruction Address Misaligned | 0 |
+| Illegal Instruction | 2 |
+| Load Address Misaligned | 4 |
+| Store Address Misaligned | 6 |
+
+For simultaneous detected events in different stages,
+the module prioritizes older instructions:
+
+**MEM > EX > ID**
+
+The module provides exception cause, faulting instruction
+address, and associated fault information.
+
+### 7.2 Trap Controller
+
+The simplified trap controller records:
+
+- `mepc`: Faulting instruction address
+- `mcause`: Exception cause
+- `mtval`: Associated fault value
+- `trap_active`: Trap activity flag
+
+It also provides trap redirection and flush requests.
+
+The configured default trap vector is `0x00000100`.
+
+### 7.3 Exception-Aware Pipeline Register
+
+`ex_mem_trap_reg.v` extends the EX/MEM data path with
+the original instruction PC so that faulting instruction
+addresses can be reported from MEM.
+
+### 7.4 Integration Status
+
+**The exception and trap modules have passed independent
+tests but are not integrated into the verified pipelined core.**
+
+The experimental trap-top variant is under development.
+
+The current modules do not constitute a complete
+RISC-V privileged architecture, CSR subsystem,
+or precise exception implementation.
+
+---
+
+## 8. Verification Strategy
+
+Verification uses self-checking Verilog testbenches
+executed with Icarus Verilog.
+
+The project includes:
+
+- Individual hardware module tests.
+- Processor-level instruction execution tests.
+- Pipeline integration tests.
+- Forwarding and hazard diagnostics.
+- Memory and alignment tests.
+- Control and safety tests.
+- Independent exception and trap module tests.
+
+### 8.1 Recorded Verification Results
+
+| Verification Category | Passed Checks |
+|---|---:|
+| Single-Cycle Processor | 373 |
+| Pipeline Unit Tests | 104 |
+| Pipeline Integration | 16 |
+| Advanced Pipeline Hazards | 29 |
+| Memory and Edge Cases | 33 |
+| Pipeline Control and Safety | 26 |
+| Load-Forwarding Diagnostic | 13 |
+| Stall and Flush Diagnostic | 16 |
+| Exception Detection Unit | 18 |
+| Trap Controller | 20 |
+| EX/MEM Trap Register | 16 |
+| **Total** | **664** |
+
+All reported checks passed in their corresponding
+recorded simulation runs.
+
+These results represent directed checks, not
+664 independent verification programs.
+
+They do not constitute exhaustive formal verification
+or RV32I architectural compliance certification.
+
+### 8.2 Verification Organization
+
+Single-cycle testbenches are stored in:
+
+`tb/`
+
+Pipeline and experimental module testbenches
+are stored in:
+
+`pipeline/tb/`
+
+The verification plan is maintained in
+[verification-plan.md](verification-plan.md).
+
+---
+
+## 9. Repository Organization
+
+```text
+RV32I-RISC-V-Processor-v2/
+├── rtl/
+│   └── Single-cycle processor RTL modules
+├── tb/
+│   └── Single-cycle testbenches
+├── pipeline/
+│   ├── processor_pipeline_top.v
+│   ├── processor_pipeline_trap_top.v
+│   ├── exception_detection_unit.v
+│   ├── trap_controller.v
+│   ├── ex_mem_trap_reg.v
+│   └── tb/
+│       └── Pipeline and module testbenches
+├── docs/
+│   ├── architecture.md
+│   ├── instruction-set.md
+│   ├── progress-log.md
+│   ├── requirements.md
+│   └── verification-plan.md
+└── README.md
+```
+
+The pipeline implementation reuses selected modules
+from the single-cycle RTL directory.
+
+---
+
+## 10. Design Limitations
+
+The following limitations remain:
+
+1. Full RV32I compliance has not been established.
+2. Full architectural exception and trap handling
+   is not integrated into the pipelined processor.
+3. Complete privileged CSR support is not implemented.
+4. ECALL and EBREAK handling is incomplete.
+5. FENCE does not implement full ordering semantics.
+6. Memory is modeled primarily for functional simulation.
+7. Formal verification and FPGA timing closure
+   have not been demonstrated.
+8. Verification coverage is directed rather than exhaustive.
+
+These limitations are explicitly documented to distinguish
+implemented functionality from future development.
+
+---
+
+## 11. Future Development
+
+Potential improvements include:
+
+- Precise exception and trap integration.
+- Privileged CSR support.
+- Architectural trap return handling.
+- Additional instruction and hazard corner-case testing.
+- Automated simulation regression scripts.
+- More detailed datapath and control-flow diagrams.
+- FPGA synthesis and timing analysis.
+
+---
+
+## 12. Engineering Documentation
+
+Additional project documents include:
+
+- [Requirements](requirements.md)
+- [Instruction Set](instruction-set.md)
+- [Verification Plan](verification-plan.md)
+- [Development Progress](progress-log.md)
+
+## References
+
+- [RISC-V RV32I Base Integer ISA Specification](https://docs.riscv.org/reference/isa/unpriv/rv32.html)
+
+---
+
+**Document Status:** Updated to reflect the implemented
+and independently verified project components.
+
+**Project:** RV32I RISC-V Processor  
+**Author:** Abdulaziz Al-Modawi Al-Qahtani
