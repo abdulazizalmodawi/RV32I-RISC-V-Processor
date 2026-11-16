@@ -3,75 +3,76 @@
 
 ### 32-bit RISC-V CPU Design and Verification in Verilog HDL
 
-A hardware design project implementing and verifying two 32-bit
-RISC-V processor architectures: a **single-cycle CPU** and a
-**five-stage pipelined CPU**.
+A hardware design project implementing and verifying two 32-bit RISC-V processor architectures: a **single-cycle CPU** and a **five-stage pipelined CPU**.
 
-The project demonstrates processor datapath design, instruction
-decoding, control logic, pipeline hazard handling, and
-simulation-based hardware verification.
+The project demonstrates processor datapath design, instruction decoding, control logic, pipeline hazard handling, and simulation-based hardware verification.
 
-**Current verification results: 664 directed checks passed.**
+**Recorded verification results: 664 directed checks passed.**
 
-> The project targets the RV32I instruction set. Full architectural
-> compliance has not been established, and exception/trap handling
-> is still under development.
+> **Development Status:** The project targets the RV32I instruction set. Full architectural compliance has not been established, and integrated exception/trap handling remains under development.
 
 ---
 
 ## Project Highlights
 
-- **Two processor architectures:** single-cycle and five-stage pipeline.
-- **32-bit datapath** with 32 general-purpose registers.
-- **Arithmetic and logic:** integer operations, shifts, and comparisons.
-- **Memory operations:** byte, halfword, and word loads/stores.
-- **Control flow:** conditional branches, JAL, and JALR.
-- **Pipeline forwarding:** resolves supported register dependencies.
-- **Hazard detection:** load-use stalls and bubble insertion.
-- **Control hazard handling:** branch redirection and pipeline flushing.
-- **Self-checking verification:** module-level and processor-level testbenches.
-- **Experimental exception modules:** independently tested, not yet integrated.
+- **Two processor architectures:** Single-cycle and five-stage pipeline.
+- **32-bit datapath:** 32 general-purpose registers, including a hardwired zero register.
+- **Arithmetic and logic:** Integer operations, shifts, and signed/unsigned comparisons.
+- **Memory operations:** Byte, halfword, and word loads/stores.
+- **Control flow:** Conditional branches, JAL, and JALR.
+- **Pipeline forwarding:** Resolves supported register dependencies.
+- **Hazard detection:** Load-use stalls and bubble insertion.
+- **Control hazard handling:** Branch redirection and pipeline flushing.
+- **Self-checking verification:** Module-level and processor-level testbenches.
+- **Experimental exception modules:** Independently tested but not integrated into the verified pipeline.
+
+---
 
 ## Processor Architectures
 
-### Single-Cycle Processor
+### 1. Single-Cycle Processor
 
-The single-cycle architecture executes each instruction through
-the complete datapath within one clock cycle.
+The single-cycle architecture executes each instruction through the complete datapath within one clock cycle.
 
-Its main components include the program counter, instruction
-memory, register file, control unit, ALU, immediate generator,
-data memory, branch logic, and writeback selection.
+Its main components include:
 
-This implementation serves as a foundation for the pipelined
-processor design.
+- Program Counter (PC)
+- Instruction Memory
+- Register File
+- Control Unit
+- ALU and ALU Control
+- Immediate Generator
+- Branch Control
+- Data Memory
+- Next-PC and Writeback Logic
 
-### Five-Stage Pipelined Processor
+This implementation provides the foundation for the pipelined processor design.
 
-The pipeline divides instruction execution into five stages:
+### 2. Five-Stage Pipelined Processor
 
-| Stage | Function |
-|---|---|
-| IF | Instruction Fetch |
-| ID | Instruction Decode and Register Read |
-| EX | ALU Execution and Branch Resolution |
-| MEM | Data Memory Access |
-| WB | Register Writeback |
+The pipelined processor divides instruction execution into five stages:
 
-Pipeline registers transfer instruction data and control signals
-between stages.
+| Stage | Name | Function |
+|---|---|---|
+| IF | Instruction Fetch | Fetch the next instruction |
+| ID | Instruction Decode | Decode instructions and read registers |
+| EX | Execute | Perform ALU operations and resolve branches |
+| MEM | Memory Access | Perform load and store operations |
+| WB | Writeback | Write results to the register file |
 
-The architecture includes operand forwarding, load-use hazard
-detection, pipeline stalls, and control-flow flushing.
+Pipeline registers preserve instruction data and control signals between stages.
+
+The architecture includes data forwarding, load-use hazard detection, pipeline stalls, instruction validity tracking, and control-flow flushing.
 
 **[View the Architecture Documentation and Pipeline Diagram](docs/architecture.md)**
 
+---
+
 ## Verification Results
 
-The project has recorded the following successful directed
-simulation checks:
+The following directed checks passed during the recorded simulation runs:
 
-| Verification Area | Passed |
+| Verification Area | Passed Checks |
 |---|---:|
 | Single-Cycle Processor | 373 |
 | Pipeline Module Tests | 104 |
@@ -86,10 +87,11 @@ simulation checks:
 | EX/MEM Trap Register | 16 |
 | **Total** | **664** |
 
-All checks passed in their respective recorded simulation runs.
+All reported checks passed in their respective recorded simulation runs.
 
-These are directed verification checks, not 664 independent
-programs or a claim of exhaustive architectural coverage.
+These are **664 directed verification checks**, not 664 independent programs or evidence of exhaustive architectural verification.
+
+---
 
 ## Repository Structure
 
@@ -104,43 +106,93 @@ RV32I-RISC-V-Processor-v2/
 |-- README.md            # Project overview
 ```
 
-The pipelined processor reuses selected RTL modules from
-the `rtl/` directory.
+The pipelined processor reuses selected RTL modules from the `rtl/` directory.
+
+---
+
+## Running the ALU Test
+
+The ALU can be verified independently using **Icarus Verilog**.
+
+### Requirements
+
+Install Icarus Verilog, which provides the `iverilog` compiler and the `vvp` simulation runtime.
+
+### Compile and Run
+
+From the repository root directory, execute:
+
+```bash
+iverilog -Wall -g2012 -s alu_tb -o alu_test.vvp rtl/alu.v tb/alu_tb.v
+vvp alu_test.vvp
+```
+
+### Expected Output
+
+The testbench should finish with:
+
+```text
+Passed: 22
+Failed: 0
+ALU VERIFICATION PASSED
+```
+
+### Test Coverage
+
+The ALU testbench includes 22 directed checks covering:
+
+- Addition and subtraction
+- Bitwise AND, OR, and XOR
+- Logical and arithmetic shifts
+- Signed and unsigned comparisons
+- Arithmetic boundary conditions
+- Shift boundary conditions
+
+The expected output is based on the reviewed RTL and testbench. Users can reproduce the result by running the commands above.
+
+---
 
 ## Tools and Technologies
 
-- **Verilog HDL** — processor hardware description.
-- **RISC-V RV32I** — target instruction set architecture.
-- **Icarus Verilog** — simulation and directed verification.
-- **EDA Playground** — browser-based RTL simulation environment.
-- **Git and GitHub** — source control and project documentation.
+| Technology | Purpose |
+|---|---|
+| Verilog HDL | Processor hardware design |
+| RISC-V RV32I | Target instruction set |
+| Icarus Verilog | RTL compilation and simulation |
+| EDA Playground | Browser-based simulation during development |
+| Git and GitHub | Version control and documentation |
+
+---
 
 ## Design Limitations
 
-This is an educational and engineering development project,
-not a production-ready CPU implementation.
+This is a computer engineering hardware development project, not a production-ready CPU.
 
 Current limitations include:
 
-- Full RV32I compliance has not been demonstrated.
+- Full RV32I architectural compliance has not been demonstrated.
 - ECALL and EBREAK architectural trap handling is incomplete.
-- FENCE is treated as a simplified no-operation.
-- Exception detection and trap control modules are not yet
-  integrated into the verified pipeline processor.
+- FENCE is modeled as a simplified no-operation.
+- Exception detection and trap control modules are not integrated into the verified pipelined processor.
 - Full privileged CSR support is not implemented.
-- FPGA timing closure and physical implementation have
-  not been demonstrated.
+- Memory models are primarily designed for functional simulation.
+- FPGA timing closure and physical implementation have not been demonstrated.
 - Verification is directed rather than exhaustive.
+
+---
 
 ## Future Development
 
-Planned areas for continued development include:
+Planned improvements include:
 
 - Integrating precise exception and trap handling.
 - Extending system instruction and CSR support.
 - Automating simulation regression testing.
 - Expanding instruction-level corner-case coverage.
 - Exploring FPGA synthesis and timing analysis.
+- Extending processor-level verification.
+
+---
 
 ## Documentation
 
@@ -148,9 +200,11 @@ Planned areas for continued development include:
 |---|---|
 | [Architecture](docs/architecture.md) | Processor design and pipeline diagram |
 | [Instruction Set](docs/instruction-set.md) | Instruction-level design and support |
-| [Verification Plan](docs/verification-plan.md) | Testing strategy |
+| [Verification Plan](docs/verification-plan.md) | Verification strategy |
 | [Requirements](docs/requirements.md) | Engineering requirements |
 | [Progress Log](docs/progress-log.md) | Development history |
+
+---
 
 ## Reference
 
@@ -164,5 +218,4 @@ Planned areas for continued development include:
 Computer Engineering Student  
 King Khalid University, Saudi Arabia
 
-*Designed, implemented, and verified as a computer engineering
-hardware development project.*
+*Designed, implemented, and verified as a computer engineering hardware development project.*
