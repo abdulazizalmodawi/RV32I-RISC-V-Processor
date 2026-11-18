@@ -1,5 +1,4 @@
-timescale 1ns / 1ps
-
+`timescale 1ns / 1ps
 module processor_immediate_boundary_tb;
 
   reg clk = 0;
