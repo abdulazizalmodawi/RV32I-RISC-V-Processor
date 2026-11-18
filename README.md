@@ -148,6 +148,58 @@ The 373 directed checks cover unit-level functionality, processor integration, i
 
 ---
 
+## Automated Pipeline Verification
+
+The five-stage pipelined processor includes an automated verification suite covering pipeline registers, forwarding, hazard detection, control flow, memory operations, and processor-level integration.
+
+The suite also includes independent tests for experimental exception and trap handling modules.
+
+**Verification Results:**
+- 17 self-checking testbenches
+- 291 directed checks passed
+- Successfully reproduced locally using Icarus Verilog on Windows
+
+### Requirements
+
+- Windows operating system
+- Icarus Verilog installed
+- `iverilog` and `vvp` available in the system PATH
+
+### Running Pipeline Tests
+
+1. Download or clone this repository.
+2. Open the repository's root directory.
+3. Double-click `run_pipeline_tests.bat`, or run it from Windows Command Prompt:
+
+```bat
+run_pipeline_tests.bat
+```
+
+The script compiles and executes all 17 testbenches and stops if a compilation or simulation error occurs.
+
+### Expected Final Output
+
+```text
+ALL 17 PIPELINE TESTBENCHES PASSED
+Pipeline and Independent Module Verification: 291 Checks
+```
+
+### Verification Scope
+
+The automated suite covers:
+- Pipeline registers and instruction validity
+- Data forwarding and load-use hazards
+- Pipeline stalls and control-flow flushing
+- Processor integration and memory edge cases
+- Pipeline control and safety
+- Independent exception detection and trap modules
+
+**Important:** The experimental exception and trap modules are tested independently and are not integrated into the verified pipeline processor.
+
+These directed tests do not establish full RV32I architectural compliance.
+
+---
+
 ## Running the ALU Test
 
 The ALU can be verified independently using **Icarus Verilog**.
