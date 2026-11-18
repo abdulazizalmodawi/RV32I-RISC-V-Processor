@@ -7,7 +7,7 @@ A hardware design project implementing and verifying two 32-bit RISC-V processor
 
 The project demonstrates processor datapath design, instruction decoding, control logic, pipeline hazard handling, and simulation-based hardware verification.
 
-**Recorded verification results: 664 directed checks passed.**
+**Verification: 664 recorded directed checks passed, including 373 single-cycle checks successfully reproduced using the automated test suite on Windows.**
 
 > **Development Status:** The project targets the RV32I instruction set. Full architectural compliance has not been established, and integrated exception/trap handling remains under development.
 
@@ -103,10 +103,48 @@ RV32I-RISC-V-Processor-v2/
 |-- pipeline/            # Five-stage pipeline and experimental modules
 |   |-- tb/              # Pipeline and module testbenches
 |-- docs/                # Engineering documentation
+|-- run_tests.bat         # Automated single-cycle verification
 |-- README.md            # Project overview
 ```
 
 The pipelined processor reuses selected RTL modules from the `rtl/` directory.
+
+---
+
+## Automated Single-Cycle Verification
+
+The single-cycle processor includes an automated regression test suite consisting of **21 self-checking testbenches and 373 directed verification checks**.
+
+All 21 testbenches and 373 checks have passed locally using Icarus Verilog on Windows.
+
+### Requirements
+
+- Windows operating system
+- Icarus Verilog installed
+- `iverilog` and `vvp` available in the system PATH
+
+### Running All Tests
+
+1. Download or clone this repository.
+2. Open the repository's root directory.
+3. Double-click `run_tests.bat`, or execute it from Windows Command Prompt:
+
+```bat
+run_tests.bat
+```
+
+The script automatically compiles and executes all 21 single-cycle testbenches and stops if a compilation or simulation error occurs.
+
+### Expected Final Output
+
+```text
+ALL 21 TESTBENCHES PASSED
+Single-Cycle Verification: 373 Checks
+```
+
+The 373 directed checks cover unit-level functionality, processor integration, instruction decoding, memory operations, branches, jumps, alignment, boundary conditions, and unsupported instructions.
+
+**Scope:** This automated script currently covers the single-cycle processor only. The pipeline and experimental exception module results documented separately in this README are not included in this script.
 
 ---
 
@@ -187,7 +225,7 @@ Planned improvements include:
 
 - Integrating precise exception and trap handling.
 - Extending system instruction and CSR support.
-- Automating simulation regression testing.
+- Extending automated regression testing to the five-stage pipeline.
 - Expanding instruction-level corner-case coverage.
 - Exploring FPGA synthesis and timing analysis.
 - Extending processor-level verification.
