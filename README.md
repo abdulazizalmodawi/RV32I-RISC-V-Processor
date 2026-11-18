@@ -7,7 +7,7 @@ A hardware design project implementing and verifying two 32-bit RISC-V processor
 
 The project demonstrates processor datapath design, instruction decoding, control logic, pipeline hazard handling, and simulation-based hardware verification.
 
-**Verification: 664 recorded directed checks passed, including 373 single-cycle checks successfully reproduced using the automated test suite on Windows.**
+**Verification: 664 directed checks successfully reproduced locally using Icarus Verilog on Windows across 38 self-checking testbenches.**
 
 > **Development Status:** The project targets the RV32I instruction set. Full architectural compliance has not been established, and integrated exception/trap handling remains under development.
 
@@ -104,6 +104,7 @@ RV32I-RISC-V-Processor-v2/
 |   |-- tb/              # Pipeline and module testbenches
 |-- docs/                # Engineering documentation
 |-- run_tests.bat         # Automated single-cycle verification
+|-- run_pipeline_tests.bat # Automated pipeline verification
 |-- README.md            # Project overview
 ```
 
@@ -277,7 +278,7 @@ Planned improvements include:
 
 - Integrating precise exception and trap handling.
 - Extending system instruction and CSR support.
-- Extending automated regression testing to the five-stage pipeline.
+- Integrating automated verification into GitHub Actions CI.
 - Expanding instruction-level corner-case coverage.
 - Exploring FPGA synthesis and timing analysis.
 - Extending processor-level verification.
