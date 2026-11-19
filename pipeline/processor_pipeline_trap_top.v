@@ -22,6 +22,12 @@ module processor_pipeline_trap_top (
   wire branch_id_ex_flush;
 
   wire [31:0] ex_next_pc;
+  // Exception detection signals
+  wire exception_valid;
+  wire [31:0] exception_cause;
+  wire [31:0] exception_pc;
+  wire [31:0] exception_tval;
+  wire [1:0] exception_stage;
 
   instruction_memory imem (
     .pc(pc),
