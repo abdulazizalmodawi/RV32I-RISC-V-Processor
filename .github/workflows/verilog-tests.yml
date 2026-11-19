@@ -126,3 +126,14 @@ jobs:
             -o trap_pipeline.vvp \
             rtl/*.v pipeline/*.v
           echo "EXPERIMENTAL TRAP PIPELINE COMPILATION PASSED"
+
+
+      - name: Test Experimental Trap Pipeline
+        shell: bash
+        run: |
+          set -e
+          iverilog -g2012 -s processor_pipeline_trap_top_tb \
+            -o trap_test.vvp \
+            rtl/*.v pipeline/*.v \
+            pipeline/tb/processor_pipeline_trap_top_tb.v
+          vvp trap_test.vvp
