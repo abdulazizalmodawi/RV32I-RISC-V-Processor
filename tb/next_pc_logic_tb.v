@@ -135,7 +135,4 @@ module next_pc_logic_tb;
   end
 
 endmodule
-    $finish;
-  end
 
-endmodule
