@@ -116,3 +116,13 @@ jobs:
 
           echo "ALL 17 PIPELINE TESTBENCHES PASSED"
           echo "TOTAL: 38 TESTBENCHES COMPLETED"
+
+
+      - name: Compile Experimental Trap Pipeline
+        shell: bash
+        run: |
+          set -e
+          iverilog -g2012 -s processor_pipeline_trap_top \
+            -o trap_pipeline.vvp \
+            rtl/*.v pipeline/*.v
+          echo "EXPERIMENTAL TRAP PIPELINE COMPILATION PASSED"
