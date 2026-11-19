@@ -302,6 +302,7 @@ module processor_pipeline_trap_top (
   wire [1:0] mem_wb_sel;
 
   wire [31:0] mem_alu_result;
+  wire [31:0] mem_pc;
   wire [31:0] mem_pc_plus4;
   wire [31:0] mem_immediate;
 
@@ -437,13 +438,14 @@ module processor_pipeline_trap_top (
   wire [2:0] mem_funct3;
   wire mem_mem_write;
 
-  ex_mem_reg ex_mem_stage (
+ex_mem_trap_reg ex_mem_stage (
     .clk(clk),
     .rst(rst),
     .stall(1'b0),
     .flush(1'b0),
 
     .valid_in(ex_execution_valid),
+    .pc_in(ex_pc),
     .pc_plus4_in(ex_pc_plus4),
     .alu_result_in(ex_alu_result),
     .rs2_data_in(forwarded_rs2),
@@ -458,6 +460,7 @@ module processor_pipeline_trap_top (
     .wb_sel_in(ex_wb_sel),
 
     .valid_out(mem_valid),
+    .pc_out(mem_pc),
     .pc_plus4_out(mem_pc_plus4),
     .alu_result_out(mem_alu_result),
     .rs2_data_out(mem_store_data),
