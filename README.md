@@ -1,4 +1,6 @@
 
+[![RV32I Processor Verification](https://github.com/abdulazizalmodawi/RV32I-RISC-V-Processor-v2/actions/workflows/verilog-tests.yml/badge.svg)](https://github.com/abdulazizalmodawi/RV32I-RISC-V-Processor-v2/actions/workflows/verilog-tests.yml)
+
 # RV32I RISC-V Processor
 
 ### 32-bit RISC-V CPU Design and Verification in Verilog HDL
