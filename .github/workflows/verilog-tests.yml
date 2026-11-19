@@ -1,0 +1,118 @@
+
+name: RV32I Processor Verification
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verification:
+    name: Verilog Simulation Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Icarus Verilog
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y iverilog
+          iverilog -V
+
+      - name: Run Single-Cycle Tests
+        shell: bash
+        run: |
+          set -e
+
+          unit_tests=(
+            alu
+            alu_control
+            branch_control
+            control_unit
+            data_memory
+            immediate_generator
+            instruction_memory
+            next_pc_logic
+            program_counter
+            register_file
+          )
+
+          for unit in "${unit_tests[@]}"; do
+            echo "Running ${unit}_tb"
+            iverilog -g2012 -s "${unit}_tb" \
+              -o test.vvp \
+              "rtl/${unit}.v" "tb/${unit}_tb.v"
+            vvp test.vvp
+          done
+
+          processor_tests=(
+            processor_top
+            processor_extended
+            processor_memory_branch
+            processor_arithmetic_loop
+            processor_alignment
+            processor_memory_encoding
+            processor_immediate_boundary
+            processor_jalr_validation
+            processor_safety
+            processor_system
+            processor_fence
+          )
+
+          for test in "${processor_tests[@]}"; do
+            echo "Running ${test}_tb"
+            iverilog -g2012 -s "${test}_tb" \
+              -o test.vvp rtl/*.v "tb/${test}_tb.v"
+            vvp test.vvp
+          done
+
+          echo "ALL 21 SINGLE-CYCLE TESTBENCHES PASSED"
+
+      - name: Run Pipeline Tests
+        shell: bash
+        run: |
+          set -e
+
+          module_tests=(
+            if_id_reg
+            id_ex_reg
+            ex_mem_reg
+            mem_wb_reg
+            forwarding_unit
+            hazard_detection_unit
+            branch_flush_control
+            if_id_valid_reg
+            exception_detection_unit
+            trap_controller
+            ex_mem_trap_reg
+          )
+
+          for unit in "${module_tests[@]}"; do
+            echo "Running ${unit}_tb"
+            iverilog -g2012 -s "${unit}_tb" \
+              -o test.vvp \
+              "pipeline/${unit}.v" "pipeline/tb/${unit}_tb.v"
+            vvp test.vvp
+          done
+
+          integration_tests=(
+            processor_pipeline_top
+            processor_pipeline_hazards
+            processor_pipeline_memory_edge
+            processor_pipeline_safety
+            pipeline_load_forward_diagnostic
+            pipeline_stall_flush_diagnostic
+          )
+
+          for test in "${integration_tests[@]}"; do
+            echo "Running ${test}_tb"
+            iverilog -g2012 -s "${test}_tb" \
+              -o test.vvp \
+              rtl/*.v pipeline/*.v "pipeline/tb/${test}_tb.v"
+            vvp test.vvp
+          done
+
+          echo "ALL 17 PIPELINE TESTBENCHES PASSED"
+          echo "TOTAL: 38 TESTBENCHES COMPLETED"
