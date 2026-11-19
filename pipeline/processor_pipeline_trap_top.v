@@ -165,6 +165,16 @@ module processor_pipeline_trap_top (
   wire id_jalr_encoding_valid;
   wire id_fence_encoding_valid;
   wire id_decode_valid;
+  
+  wire id_illegal_instruction;
+
+  assign id_illegal_instruction =
+      id_valid &&
+      (!id_control_valid ||
+       !id_alu_valid ||
+       !id_memory_encoding_valid ||
+       !id_jalr_encoding_valid ||
+       !id_fence_encoding_valid);
 
   assign id_memory_encoding_valid =
       ((id_opcode == 7'b0000011) ?
@@ -443,6 +453,14 @@ module processor_pipeline_trap_top (
   wire [31:0] mem_store_data;
   wire [2:0] mem_funct3;
   wire mem_mem_write;
+  
+  wire mem_address_misaligned;
+
+  assign mem_address_misaligned =
+      ((mem_funct3 == 3'b001) &&
+       mem_alu_result[0] != 1'b0) ||
+      ((mem_funct3 == 3'b010) &&
+       mem_alu_result[1:0] != 2'b00);
 
 ex_mem_trap_reg ex_mem_stage (
     .clk(clk),
@@ -576,5 +594,35 @@ ex_mem_trap_reg ex_mem_stage (
       wb_reg_write_raw &&
       !rst &&
       (wb_rd != 5'd0);
+
+  // =========================================
+  // EXCEPTION DETECTION UNIT
+  // =========================================
+
+  exception_detection_unit exception_unit (
+    .id_valid(id_valid),
+    .id_illegal(id_illegal_instruction),
+    .id_pc(id_pc),
+    .id_instruction(id_instruction),
+
+    .ex_valid(ex_valid),
+    .ex_control_transfer(ex_control_transfer),
+    .ex_target_misaligned(!ex_target_valid),
+    .ex_pc(ex_pc),
+    .ex_target_address(ex_next_pc),
+
+    .mem_valid(mem_valid),
+    .mem_read(mem_mem_read),
+    .mem_write(mem_mem_write),
+    .mem_address_misaligned(mem_address_misaligned),
+    .mem_pc(mem_pc),
+    .mem_address(mem_alu_result),
+
+    .exception_valid(exception_valid),
+    .exception_cause(exception_cause),
+    .exception_pc(exception_pc),
+    .exception_tval(exception_tval),
+    .exception_stage(exception_stage)
+  );
 
 endmodule
