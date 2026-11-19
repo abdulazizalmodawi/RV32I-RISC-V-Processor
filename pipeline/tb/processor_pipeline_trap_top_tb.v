@@ -42,53 +42,137 @@ module processor_pipeline_trap_top_tb;
     passed = 0;
     failed = 0;
 
-    // Allow instruction memory initialization
     #2;
 
-    // Illegal instruction at address 0x00000000
-    dut.imem.memory[0] = 32'hFFFFFFFF;
+    // =========================================
+    // TEST 1: ILLEGAL INSTRUCTION
+    // =========================================
 
-    // Safe instruction at trap vector 0x100
+    dut.imem.memory[0] = 32'hFFFFFFFF;
     dut.imem.memory[64] = 32'h00000013;
 
-    // Reset processor
     repeat (2) tick();
     rst = 0;
 
-    // Fetch illegal instruction
-    tick();
-
-    // Decode illegal instruction and take trap
-    tick();
+    // Allow illegal instruction to reach ID
+    repeat (2) tick();
 
     $display("");
-    $display("==============================");
-    $display(" PIPELINE TRAP TEST");
-    $display("==============================");
+    $display("TEST 1: ILLEGAL INSTRUCTION");
 
     check(dut.trap_active === 1'b1,
-          "Trap becomes active");
+          "Illegal instruction trap active");
 
     check(dut.pc === 32'h00000100,
-          "PC redirects to trap vector");
+          "Illegal instruction redirect");
 
-    check(dut.trap_mepc === 32'h00000000,
-          "MEPC saves faulting PC");
+    check(dut.trap_mepc === 32'd0,
+          "Illegal instruction MEPC");
 
     check(dut.trap_mcause === 32'd2,
-          "MCAUSE records illegal instruction");
+          "Illegal instruction MCAUSE");
 
     check(dut.trap_mtval === 32'hFFFFFFFF,
-          "MTVAL saves illegal instruction");
+          "Illegal instruction MTVAL");
 
-    $display("------------------------------");
+
+    // =========================================
+    // TEST 2: MISALIGNED LOAD
+    // =========================================
+
+    rst = 1;
+
+    // lw x1, 1(x0)
+    dut.imem.memory[0] = 32'h00102083;
+
+    repeat (2) tick();
+    rst = 0;
+
+    // Allow LOAD to reach MEM
+    repeat (7) tick();
+
+    $display("");
+    $display("TEST 2: MISALIGNED LOAD");
+
+    check(dut.trap_active === 1'b1,
+          "Misaligned load trap active");
+
+    check(dut.trap_mcause === 32'd4,
+          "Misaligned load MCAUSE");
+
+    check(dut.trap_mepc === 32'd0,
+          "Misaligned load MEPC");
+
+    check(dut.trap_mtval === 32'd1,
+          "Misaligned load MTVAL");
+
+    check(dut.rf.registers[1] === 32'd0,
+          "Misaligned load blocks writeback");
+
+
+    // =========================================
+    // TEST 3: MISALIGNED STORE
+    // =========================================
+
+    rst = 1;
+
+    // sw x2, 1(x0)
+    dut.imem.memory[0] = 32'h002020A3;
+
+    repeat (2) tick();
+
+    // Initialize memory with a known value
+    // A misaligned store must not overwrite it.
+    dut.dmem.memory[1] = 8'hA5;
+    dut.dmem.memory[2] = 8'h5A;
+    dut.dmem.memory[3] = 8'hC3;
+    dut.dmem.memory[4] = 8'h3C;
+
+    rst = 0;
+
+    // Allow STORE to reach MEM
+    repeat (7) tick();
+
+    $display("");
+    $display("TEST 3: MISALIGNED STORE");
+
+    check(dut.trap_active === 1'b1,
+          "Misaligned store trap active");
+
+    check(dut.trap_mcause === 32'd6,
+          "Misaligned store MCAUSE");
+
+    check(dut.trap_mepc === 32'd0,
+          "Misaligned store MEPC");
+
+    check(dut.trap_mtval === 32'd1,
+          "Misaligned store MTVAL");
+
+    check(
+      dut.dmem.memory[1] === 8'hA5 &&
+      dut.dmem.memory[2] === 8'h5A &&
+      dut.dmem.memory[3] === 8'hC3 &&
+      dut.dmem.memory[4] === 8'h3C,
+      "Misaligned store preserves memory"
+    );
+
+
+    // =========================================
+    // FINAL RESULTS
+    // =========================================
+
+    $display("");
+    $display("==================================");
+    $display(" PIPELINE TRAP VERIFICATION");
+    $display("==================================");
+
     $display("Passed: %0d", passed);
     $display("Failed: %0d", failed);
 
-    if (passed == 5 && failed == 0)
-      $display("PIPELINE TRAP TEST PASSED");
+    if (passed == 15 && failed == 0)
+      $display("ALL 15 PIPELINE TRAP CHECKS PASSED");
     else
-      $fatal(1, "PIPELINE TRAP TEST FAILED");
+      $fatal(1, "PIPELINE TRAP VERIFICATION FAILED");
 
     $finish;
   end
