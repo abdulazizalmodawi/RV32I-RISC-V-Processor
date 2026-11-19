@@ -1,4 +1,3 @@
-
 module processor_pipeline_trap_top (
   input wire clk,
   input wire rst
@@ -28,6 +27,15 @@ module processor_pipeline_trap_top (
   wire [31:0] exception_pc;
   wire [31:0] exception_tval;
   wire [1:0] exception_stage;
+  
+  // Trap controller signals
+  wire [31:0] trap_mepc;
+  wire [31:0] trap_mcause;
+  wire [31:0] trap_mtval;
+  wire trap_active;
+  wire trap_redirect;
+  wire [31:0] trap_target;
+  wire trap_flush;
 
   instruction_memory imem (
     .pc(pc),
@@ -39,6 +47,8 @@ module processor_pipeline_trap_top (
   always @(posedge clk) begin
     if (rst)
       pc <= 32'd0;
+    else if (trap_redirect)
+      pc <= trap_target;
     else if (pc_redirect)
       pc <= ex_next_pc;
     else if (hazard_pc_write)
@@ -57,7 +67,7 @@ module processor_pipeline_trap_top (
     .clk(clk),
     .rst(rst),
     .stall(!hazard_if_id_write),
-    .flush(branch_if_id_flush),
+    .flush(branch_if_id_flush || trap_flush),
     .pc_in(pc),
     .instruction_in(if_instruction),
     .pc_out(id_pc),
@@ -68,7 +78,7 @@ module processor_pipeline_trap_top (
     .clk(clk),
     .rst(rst),
     .stall(!hazard_if_id_write),
-    .flush(branch_if_id_flush),
+    .flush(branch_if_id_flush || trap_flush),
     .valid_in(if_instruction_valid),
     .valid_out(id_valid)
   );
@@ -235,8 +245,7 @@ module processor_pipeline_trap_top (
     .clk(clk),
     .rst(rst),
     .stall(1'b0),
-    .flush(hazard_id_ex_flush || branch_id_ex_flush),
-
+    .flush(hazard_id_ex_flush || branch_id_ex_flush || trap_flush),
     .valid_in(id_decode_valid),
     .pc_in(id_pc),
     .rs1_data_in(id_rs1_data),
@@ -466,7 +475,7 @@ ex_mem_trap_reg ex_mem_stage (
     .clk(clk),
     .rst(rst),
     .stall(1'b0),
-    .flush(1'b0),
+    .flush(exception_valid && (exception_stage == 2'b11)),
 
     .valid_in(ex_execution_valid),
     .pc_in(ex_pc),
@@ -511,10 +520,18 @@ ex_mem_trap_reg ex_mem_stage (
   wire mem_instruction_valid;
 
   assign active_mem_read =
-      mem_valid && mem_mem_read && !rst;
+      mem_valid &&
+      mem_mem_read &&
+      !mem_address_misaligned &&
+      !rst;
+
 
   assign active_mem_write =
-      mem_valid && mem_mem_write && !rst;
+      mem_valid &&
+      mem_mem_write &&
+      !mem_address_misaligned &&
+      !rst;
+
 
   data_memory dmem (
     .clk(clk),
@@ -545,7 +562,7 @@ ex_mem_trap_reg ex_mem_stage (
     .clk(clk),
     .rst(rst),
     .stall(1'b0),
-    .flush(1'b0),
+    .flush(exception_valid && (exception_stage == 2'b11)),
 
     .valid_in(mem_instruction_valid),
     .pc_plus4_in(mem_pc_plus4),
@@ -600,7 +617,7 @@ ex_mem_trap_reg ex_mem_stage (
   // =========================================
 
   exception_detection_unit exception_unit (
-    .id_valid(id_valid),
+    .id_valid(id_valid && !hazard_stall && !pc_redirect),
     .id_illegal(id_illegal_instruction),
     .id_pc(id_pc),
     .id_instruction(id_instruction),
@@ -623,6 +640,32 @@ ex_mem_trap_reg ex_mem_stage (
     .exception_pc(exception_pc),
     .exception_tval(exception_tval),
     .exception_stage(exception_stage)
+  );
+
+  // =========================================
+  // TRAP CONTROLLER
+  // =========================================
+
+  trap_controller trap_unit (
+    .clk(clk),
+    .rst(rst),
+
+    .exception_valid(exception_valid),
+    .exception_cause(exception_cause),
+    .exception_pc(exception_pc),
+    .exception_tval(exception_tval),
+
+    .trap_return(1'b0),
+    .return_address(32'd0),
+
+    .mepc(trap_mepc),
+    .mcause(trap_mcause),
+    .mtval(trap_mtval),
+    .trap_active(trap_active),
+
+    .trap_redirect(trap_redirect),
+    .trap_target(trap_target),
+    .trap_flush(trap_flush)
   );
 
 endmodule
