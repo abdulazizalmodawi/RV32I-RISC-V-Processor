@@ -137,3 +137,15 @@ jobs:
             rtl/*.v pipeline/*.v \
             pipeline/tb/processor_pipeline_trap_top_tb.v
           vvp trap_test.vvp
+
+<CodeBlock language="yaml" editable>
+      - name: Test Pipeline Exception Priority
+        shell: bash
+        run: |
+          set -e
+          iverilog -g2012 -s processor_pipeline_trap_priority_tb \
+            -o trap_priority.vvp \
+            rtl/*.v pipeline/*.v \
+            pipeline/tb/processor_pipeline_trap_priority_tb.v
+          vvp trap_priority.vvp
+</CodeBlock>
