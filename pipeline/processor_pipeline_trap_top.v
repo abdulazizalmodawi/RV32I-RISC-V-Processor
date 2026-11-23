@@ -37,6 +37,22 @@ module processor_pipeline_trap_top (
   wire [31:0] trap_target;
   wire trap_flush;
 
+  // Experimental MRET support (not a complete privileged ISA).
+  localparam [31:0] MRET_INSTRUCTION = 32'h30200073;
+  wire id_mret;
+  wire trap_return_request;
+  wire [31:0] trap_return_address;
+
+  assign id_mret = id_valid &&
+                   (id_instruction == MRET_INSTRUCTION);
+  // This demonstration skips the faulting 32-bit instruction.
+  // Standard MRET returns to mepc; full CSR software handling is future work.
+  assign trap_return_address = trap_mepc + 32'd4;
+  assign trap_return_request =
+      id_mret && trap_active && !hazard_stall &&
+      !pc_redirect && !exception_valid;
+
+
   instruction_memory imem (
     .pc(pc),
     .instruction(if_instruction),
@@ -179,7 +195,7 @@ module processor_pipeline_trap_top (
   wire id_illegal_instruction;
 
   assign id_illegal_instruction =
-      id_valid &&
+      id_valid && !(id_mret && trap_active) &&
       (!id_control_valid ||
        !id_alu_valid ||
        !id_memory_encoding_valid ||
@@ -655,8 +671,8 @@ ex_mem_trap_reg ex_mem_stage (
     .exception_pc(exception_pc),
     .exception_tval(exception_tval),
 
-    .trap_return(1'b0),
-    .return_address(32'd0),
+    .trap_return(trap_return_request),
+    .return_address(trap_return_address),
 
     .mepc(trap_mepc),
     .mcause(trap_mcause),
