@@ -159,3 +159,14 @@ jobs:
             rtl/*.v pipeline/*.v \
             pipeline/tb/processor_pipeline_trap_return_tb.v
           vvp trap_return_test.vvp
+
+
+      - name: Test LHU Alignment
+        shell: bash
+        run: |
+          set -e
+          iverilog -g2012 -s processor_pipeline_trap_lhu_tb \
+            -o trap_lhu_test.vvp \
+            rtl/*.v pipeline/*.v \
+            pipeline/tb/processor_pipeline_trap_lhu_tb.v
+          vvp trap_lhu_test.vvp
