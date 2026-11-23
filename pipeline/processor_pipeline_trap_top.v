@@ -481,8 +481,11 @@ module processor_pipeline_trap_top (
   
   wire mem_address_misaligned;
 
+  // Halfword alignment applies to LH (001) and LHU (101).
+  // Word alignment applies to LW (010) and SW (010).
   assign mem_address_misaligned =
-      ((mem_funct3 == 3'b001) &&
+      (((mem_funct3 == 3'b001) ||
+        (mem_funct3 == 3'b101)) &&
        mem_alu_result[0] != 1'b0) ||
       ((mem_funct3 == 3'b010) &&
        mem_alu_result[1:0] != 2'b00);
