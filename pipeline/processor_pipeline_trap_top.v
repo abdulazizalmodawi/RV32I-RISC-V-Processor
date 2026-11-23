@@ -1,4 +1,3 @@
-
 module processor_pipeline_trap_top (
   input wire clk,
   input wire rst
@@ -22,6 +21,54 @@ module processor_pipeline_trap_top (
   wire branch_id_ex_flush;
 
   wire [31:0] ex_next_pc;
+  // Exception detection signals
+  wire exception_valid;
+  wire [31:0] exception_cause;
+  wire [31:0] exception_pc;
+  wire [31:0] exception_tval;
+  wire [1:0] exception_stage;
+  
+  // Trap controller signals
+  wire [31:0] trap_mepc;
+  wire [31:0] trap_mcause;
+  wire [31:0] trap_mtval;
+  wire trap_active;
+  wire trap_redirect;
+  wire [31:0] trap_target;
+  wire trap_flush;
+
+  // Experimental MRET support (not a complete privileged ISA).
+  localparam [31:0] MRET_INSTRUCTION = 32'h30200073;
+  wire id_mret;
+  wire id_mepc_csrrwi;
+  wire mepc_write_request;
+  wire [31:0] mepc_write_data;
+  wire trap_return_request;
+  wire [31:0] trap_return_address;
+
+  assign id_mret = id_valid &&
+                   (id_instruction == MRET_INSTRUCTION);
+  // Standard MRET uses the saved MEPC without incrementing it.
+  assign trap_return_address = trap_mepc;
+
+  // Experimental subset: CSRRWI x0, mepc, zimm.
+  // This permits the trap handler to update MEPC to a small address
+  // before MRET. Not a complete CSR implementation.
+  assign id_mepc_csrrwi =
+      id_valid &&
+      (id_instruction[6:0] == 7'b1110011) &&
+      (id_instruction[14:12] == 3'b101) &&
+      (id_instruction[31:20] == 12'h341) &&
+      (id_instruction[11:7] == 5'd0);
+
+  assign mepc_write_data = {27'd0, id_instruction[19:15]};
+  assign mepc_write_request =
+      id_mepc_csrrwi && trap_active && !hazard_stall &&
+      !pc_redirect && !exception_valid;
+  assign trap_return_request =
+      id_mret && trap_active && !hazard_stall &&
+      !pc_redirect && !exception_valid;
+
 
   instruction_memory imem (
     .pc(pc),
@@ -33,6 +80,8 @@ module processor_pipeline_trap_top (
   always @(posedge clk) begin
     if (rst)
       pc <= 32'd0;
+    else if (trap_redirect)
+      pc <= trap_target;
     else if (pc_redirect)
       pc <= ex_next_pc;
     else if (hazard_pc_write)
@@ -51,7 +100,7 @@ module processor_pipeline_trap_top (
     .clk(clk),
     .rst(rst),
     .stall(!hazard_if_id_write),
-    .flush(branch_if_id_flush),
+    .flush(branch_if_id_flush || trap_flush),
     .pc_in(pc),
     .instruction_in(if_instruction),
     .pc_out(id_pc),
@@ -62,7 +111,7 @@ module processor_pipeline_trap_top (
     .clk(clk),
     .rst(rst),
     .stall(!hazard_if_id_write),
-    .flush(branch_if_id_flush),
+    .flush(branch_if_id_flush || trap_flush),
     .valid_in(if_instruction_valid),
     .valid_out(id_valid)
   );
@@ -159,6 +208,16 @@ module processor_pipeline_trap_top (
   wire id_jalr_encoding_valid;
   wire id_fence_encoding_valid;
   wire id_decode_valid;
+  
+  wire id_illegal_instruction;
+
+  assign id_illegal_instruction =
+      id_valid && !((id_mret || id_mepc_csrrwi) && trap_active) &&
+      (!id_control_valid ||
+       !id_alu_valid ||
+       !id_memory_encoding_valid ||
+       !id_jalr_encoding_valid ||
+       !id_fence_encoding_valid);
 
   assign id_memory_encoding_valid =
       ((id_opcode == 7'b0000011) ?
@@ -219,8 +278,7 @@ module processor_pipeline_trap_top (
     .clk(clk),
     .rst(rst),
     .stall(1'b0),
-    .flush(hazard_id_ex_flush || branch_id_ex_flush),
-
+    .flush(hazard_id_ex_flush || branch_id_ex_flush || trap_flush),
     .valid_in(id_decode_valid),
     .pc_in(id_pc),
     .rs1_data_in(id_rs1_data),
@@ -302,6 +360,7 @@ module processor_pipeline_trap_top (
   wire [1:0] mem_wb_sel;
 
   wire [31:0] mem_alu_result;
+  wire [31:0] mem_pc;
   wire [31:0] mem_pc_plus4;
   wire [31:0] mem_immediate;
 
@@ -436,14 +495,26 @@ module processor_pipeline_trap_top (
   wire [31:0] mem_store_data;
   wire [2:0] mem_funct3;
   wire mem_mem_write;
+  
+  wire mem_address_misaligned;
 
-  ex_mem_reg ex_mem_stage (
+  // Halfword alignment applies to LH (001) and LHU (101).
+  // Word alignment applies to LW (010) and SW (010).
+  assign mem_address_misaligned =
+      (((mem_funct3 == 3'b001) ||
+        (mem_funct3 == 3'b101)) &&
+       mem_alu_result[0] != 1'b0) ||
+      ((mem_funct3 == 3'b010) &&
+       mem_alu_result[1:0] != 2'b00);
+
+ex_mem_trap_reg ex_mem_stage (
     .clk(clk),
     .rst(rst),
     .stall(1'b0),
-    .flush(1'b0),
+    .flush(exception_valid && (exception_stage == 2'b11)),
 
     .valid_in(ex_execution_valid),
+    .pc_in(ex_pc),
     .pc_plus4_in(ex_pc_plus4),
     .alu_result_in(ex_alu_result),
     .rs2_data_in(forwarded_rs2),
@@ -458,6 +529,7 @@ module processor_pipeline_trap_top (
     .wb_sel_in(ex_wb_sel),
 
     .valid_out(mem_valid),
+    .pc_out(mem_pc),
     .pc_plus4_out(mem_pc_plus4),
     .alu_result_out(mem_alu_result),
     .rs2_data_out(mem_store_data),
@@ -484,10 +556,18 @@ module processor_pipeline_trap_top (
   wire mem_instruction_valid;
 
   assign active_mem_read =
-      mem_valid && mem_mem_read && !rst;
+      mem_valid &&
+      mem_mem_read &&
+      !mem_address_misaligned &&
+      !rst;
+
 
   assign active_mem_write =
-      mem_valid && mem_mem_write && !rst;
+      mem_valid &&
+      mem_mem_write &&
+      !mem_address_misaligned &&
+      !rst;
+
 
   data_memory dmem (
     .clk(clk),
@@ -518,7 +598,7 @@ module processor_pipeline_trap_top (
     .clk(clk),
     .rst(rst),
     .stall(1'b0),
-    .flush(1'b0),
+    .flush(exception_valid && (exception_stage == 2'b11)),
 
     .valid_in(mem_instruction_valid),
     .pc_plus4_in(mem_pc_plus4),
@@ -567,5 +647,63 @@ module processor_pipeline_trap_top (
       wb_reg_write_raw &&
       !rst &&
       (wb_rd != 5'd0);
+
+  // =========================================
+  // EXCEPTION DETECTION UNIT
+  // =========================================
+
+  exception_detection_unit exception_unit (
+    .id_valid(id_valid && !hazard_stall && !pc_redirect),
+    .id_illegal(id_illegal_instruction),
+    .id_pc(id_pc),
+    .id_instruction(id_instruction),
+
+    .ex_valid(ex_valid),
+    .ex_control_transfer(ex_control_transfer),
+    .ex_target_misaligned(!ex_target_valid),
+    .ex_pc(ex_pc),
+    .ex_target_address(ex_next_pc),
+
+    .mem_valid(mem_valid),
+    .mem_read(mem_mem_read),
+    .mem_write(mem_mem_write),
+    .mem_address_misaligned(mem_address_misaligned),
+    .mem_pc(mem_pc),
+    .mem_address(mem_alu_result),
+
+    .exception_valid(exception_valid),
+    .exception_cause(exception_cause),
+    .exception_pc(exception_pc),
+    .exception_tval(exception_tval),
+    .exception_stage(exception_stage)
+  );
+
+  // =========================================
+  // TRAP CONTROLLER
+  // =========================================
+
+  trap_controller trap_unit (
+    .clk(clk),
+    .rst(rst),
+
+    .exception_valid(exception_valid),
+    .exception_cause(exception_cause),
+    .exception_pc(exception_pc),
+    .exception_tval(exception_tval),
+
+    .trap_return(trap_return_request),
+    .return_address(trap_return_address),
+    .mepc_write_valid(mepc_write_request),
+    .mepc_write_data(mepc_write_data),
+
+    .mepc(trap_mepc),
+    .mcause(trap_mcause),
+    .mtval(trap_mtval),
+    .trap_active(trap_active),
+
+    .trap_redirect(trap_redirect),
+    .trap_target(trap_target),
+    .trap_flush(trap_flush)
+  );
 
 endmodule

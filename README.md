@@ -9,9 +9,9 @@ A hardware design project implementing and verifying two 32-bit RISC-V processor
 
 The project demonstrates processor datapath design, instruction decoding, control logic, pipeline hazard handling, and simulation-based hardware verification.
 
-**Verification: 664 directed checks successfully reproduced locally using Icarus Verilog on Windows across 38 self-checking testbenches.**
+**Verification: 710 directed checks passed across 42 self-checking testbenches in recorded runs.** The original 664 checks (38 testbenches) were reproduced locally on Windows; 46 additional directed checks (4 testbenches) were verified in GitHub Actions for the experimental trap-enabled pipeline.
 
-> **Development Status:** The project targets the RV32I instruction set. Full architectural compliance has not been established, and integrated exception/trap handling remains under development.
+> **Development Status:** The project targets RV32I. The original verified pipeline and the separately maintained **experimental trap-enabled pipeline** are distinct implementations. The experimental variant integrates selected synchronous traps and a limited MRET/CSR demonstration. Full architectural or privileged-ISA compliance has **not** been established.
 
 ---
 
@@ -26,7 +26,8 @@ The project demonstrates processor datapath design, instruction decoding, contro
 - **Hazard detection:** Load-use stalls and bubble insertion.
 - **Control hazard handling:** Branch redirection and pipeline flushing.
 - **Self-checking verification:** Module-level and processor-level testbenches.
-- **Experimental exception modules:** Independently tested but not integrated into the verified pipeline.
+- **Experimental trap-enabled pipeline:** Integrates illegal-instruction, misaligned instruction-target, and misaligned load/store detection, trap redirection, and a limited MRET/CSR demonstration in a separate processor variant.
+- **Continuous integration:** GitHub Actions runs the baseline regression suites and experimental trap tests on Ubuntu.
 
 ---
 
@@ -68,6 +69,10 @@ The architecture includes data forwarding, load-use hazard detection, pipeline s
 
 **[View the Architecture Documentation and Pipeline Diagram](docs/architecture.md)**
 
+### 3. Experimental Trap-Enabled Pipeline
+
+`pipeline/processor_pipeline_trap_top.v` is a separate experimental processor top-level. It integrates the existing pipeline datapath with `exception_detection_unit`, `trap_controller`, and `ex_mem_trap_reg`. The implementation demonstrates exception cause/context capture (`mepc`, `mcause`, `mtval`), trap-vector redirection, selected pipeline flushing, and a limited trap-return path. The baseline `pipeline/processor_pipeline_top.v` remains independently tested. This experimental implementation is **not** a complete privileged RISC-V processor, and precise exceptions under every combination of concurrent events have not been proven.
+
 ---
 
 ## Verification Results
@@ -87,11 +92,15 @@ The following directed checks passed during the recorded simulation runs:
 | Exception Detection Module | 18 |
 | Trap Controller Module | 20 |
 | EX/MEM Trap Register | 16 |
-| **Total** | **664** |
+| Experimental Trap Pipeline: Illegal Instruction, Misaligned Load/Store, and Misaligned Jump | 20 |
+| Experimental Exception Priority Integration | 12 |
+| Experimental Trap Return / MRET | 9 |
+| Experimental LHU Alignment | 5 |
+| **Total** | **710** |
 
-All reported checks passed in their respective recorded simulation runs.
+All reported checks passed in their respective recorded simulation runs. The **664 baseline checks across 38 testbenches** were reproduced locally on Windows. The **46 additional experimental checks across 4 testbenches** passed in GitHub Actions on the feature branch.
 
-These are **664 directed verification checks**, not 664 independent programs or evidence of exhaustive architectural verification.
+These are **710 directed verification checks**, not 710 independent programs or evidence of exhaustive architectural verification. Passing tests do not establish full RV32I or privileged-ISA compliance.
 
 ---
 
@@ -102,8 +111,9 @@ RV32I-RISC-V-Processor-v2/
 |
 |-- rtl/                 # Single-cycle CPU and shared RTL modules
 |-- tb/                  # Single-cycle verification testbenches
-|-- pipeline/            # Five-stage pipeline and experimental modules
-|   |-- tb/              # Pipeline and module testbenches
+|-- pipeline/            # Baseline pipeline and experimental trap-enabled variant
+|   |-- tb/              # Pipeline and experimental testbenches
+|-- .github/workflows/    # GitHub Actions automated verification
 |-- docs/                # Engineering documentation
 |-- run_tests.bat         # Automated single-cycle verification
 |-- run_pipeline_tests.bat # Automated pipeline verification
@@ -197,9 +207,22 @@ The automated suite covers:
 - Pipeline control and safety
 - Independent exception detection and trap modules
 
-**Important:** The experimental exception and trap modules are tested independently and are not integrated into the verified pipeline processor.
+**Important:** The original 17-testbench pipeline regression covers the baseline processor and independent trap-related module tests. A **separate** experimental trap-enabled pipeline is integrated and tested through additional GitHub Actions steps; it is not part of the original 291-check baseline suite.
 
 These directed tests do not establish full RV32I architectural compliance.
+
+---
+
+## GitHub Actions Continuous Integration
+
+The workflow at `.github/workflows/verilog-tests.yml` runs on Ubuntu for pushes, pull requests, and manual dispatch. It installs Icarus Verilog and executes:
+
+- **21 single-cycle testbenches:** 373 directed checks.
+- **17 baseline pipeline / independent module testbenches:** 291 directed checks.
+- **Experimental trap pipeline compilation:** build-only check, not counted as a directed verification check.
+- **4 experimental integration testbenches:** 20 trap cases, 12 priority checks, 9 trap-return checks, and 5 LHU alignment checks (46 directed checks).
+
+The badge at the top displays the workflow status. The experimental verification results reported here reflect recorded runs on `feature/trap-integration`; confirm the same workflow has passed on `main` after any future merge.
 
 ---
 
@@ -266,8 +289,8 @@ Current limitations include:
 - Full RV32I architectural compliance has not been demonstrated.
 - ECALL and EBREAK architectural trap handling is incomplete.
 - FENCE is modeled as a simplified no-operation.
-- Exception detection and trap control modules are not integrated into the verified pipelined processor.
-- Full privileged CSR support is not implemented.
+- The baseline verified pipelined processor does not integrate trap handling; a separate experimental pipeline variant does. Its precise-exception behavior has not been exhaustively verified.
+- Full privileged CSR support is not implemented; MRET and CSR behavior in the experimental processor is deliberately limited, and complete standards conformance is not claimed.
 - Memory models are primarily designed for functional simulation.
 - FPGA timing closure and physical implementation have not been demonstrated.
 - Verification is directed rather than exhaustive.
@@ -278,9 +301,9 @@ Current limitations include:
 
 Planned improvements include:
 
-- Integrating precise exception and trap handling.
+- Further validating and refining precise exception and trap handling in the experimental pipeline.
 - Extending system instruction and CSR support.
-- Integrating automated verification into GitHub Actions CI.
+- Expanding GitHub Actions coverage with additional corner cases and regression checks.
 - Expanding instruction-level corner-case coverage.
 - Exploring FPGA synthesis and timing analysis.
 - Extending processor-level verification.
