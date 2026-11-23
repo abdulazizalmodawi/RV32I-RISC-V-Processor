@@ -138,7 +138,7 @@ jobs:
             pipeline/tb/processor_pipeline_trap_top_tb.v
           vvp trap_test.vvp
 
-<CodeBlock language="yaml" editable>
+
       - name: Test Pipeline Exception Priority
         shell: bash
         run: |
@@ -148,4 +148,3 @@ jobs:
             rtl/*.v pipeline/*.v \
             pipeline/tb/processor_pipeline_trap_priority_tb.v
           vvp trap_priority.vvp
-</CodeBlock>
