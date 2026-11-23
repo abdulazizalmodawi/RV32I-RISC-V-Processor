@@ -40,14 +40,31 @@ module processor_pipeline_trap_top (
   // Experimental MRET support (not a complete privileged ISA).
   localparam [31:0] MRET_INSTRUCTION = 32'h30200073;
   wire id_mret;
+  wire id_mepc_csrrwi;
+  wire mepc_write_request;
+  wire [31:0] mepc_write_data;
   wire trap_return_request;
   wire [31:0] trap_return_address;
 
   assign id_mret = id_valid &&
                    (id_instruction == MRET_INSTRUCTION);
-  // This demonstration skips the faulting 32-bit instruction.
-  // Standard MRET returns to mepc; full CSR software handling is future work.
-  assign trap_return_address = trap_mepc + 32'd4;
+  // Standard MRET uses the saved MEPC without incrementing it.
+  assign trap_return_address = trap_mepc;
+
+  // Experimental subset: CSRRWI x0, mepc, zimm.
+  // This permits the trap handler to update MEPC to a small address
+  // before MRET. Not a complete CSR implementation.
+  assign id_mepc_csrrwi =
+      id_valid &&
+      (id_instruction[6:0] == 7'b1110011) &&
+      (id_instruction[14:12] == 3'b101) &&
+      (id_instruction[31:20] == 12'h341) &&
+      (id_instruction[11:7] == 5'd0);
+
+  assign mepc_write_data = {27'd0, id_instruction[19:15]};
+  assign mepc_write_request =
+      id_mepc_csrrwi && trap_active && !hazard_stall &&
+      !pc_redirect && !exception_valid;
   assign trap_return_request =
       id_mret && trap_active && !hazard_stall &&
       !pc_redirect && !exception_valid;
@@ -195,7 +212,7 @@ module processor_pipeline_trap_top (
   wire id_illegal_instruction;
 
   assign id_illegal_instruction =
-      id_valid && !(id_mret && trap_active) &&
+      id_valid && !((id_mret || id_mepc_csrrwi) && trap_active) &&
       (!id_control_valid ||
        !id_alu_valid ||
        !id_memory_encoding_valid ||
@@ -676,6 +693,8 @@ ex_mem_trap_reg ex_mem_stage (
 
     .trap_return(trap_return_request),
     .return_address(trap_return_address),
+    .mepc_write_valid(mepc_write_request),
+    .mepc_write_data(mepc_write_data),
 
     .mepc(trap_mepc),
     .mcause(trap_mcause),
