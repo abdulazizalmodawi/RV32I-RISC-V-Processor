@@ -1,33 +1,36 @@
 
-[![RV32I Processor Verification](https://github.com/abdulazizalmodawi/RV32I-RISC-V-Processor-v2/actions/workflows/verilog-tests.yml/badge.svg)](https://github.com/abdulazizalmodawi/RV32I-RISC-V-Processor-v2/actions/workflows/verilog-tests.yml)
-
 # RV32I RISC-V Processor
 
 ### 32-bit RISC-V CPU Design and Verification in Verilog HDL
 
-A hardware design project implementing and verifying two 32-bit RISC-V processor architectures: a **single-cycle CPU** and a **five-stage pipelined CPU**.
+[![RV32I Processor Verification](https://github.com/abdulazizalmodawi/RV32I-RISC-V-Processor-v2/actions/workflows/verilog-tests.yml/badge.svg)](https://github.com/abdulazizalmodawi/RV32I-RISC-V-Processor-v2/actions/workflows/verilog-tests.yml)
 
-The project demonstrates processor datapath design, instruction decoding, control logic, pipeline hazard handling, and simulation-based hardware verification.
+A computer engineering hardware project implementing and verifying two 32-bit RISC-V processor architectures: a **single-cycle CPU** and a **five-stage pipelined CPU**.
 
-**Verification: 710 directed checks passed across 42 self-checking testbenches in recorded runs.** The original 664 checks (38 testbenches) were reproduced locally on Windows; 46 additional directed checks (4 testbenches) were verified in GitHub Actions for the experimental trap-enabled pipeline.
+The project demonstrates processor datapath design, instruction decoding, control logic, pipeline hazards, exception handling, and simulation-based hardware verification.
 
-> **Development Status:** The project targets RV32I. The original verified pipeline and the separately maintained **experimental trap-enabled pipeline** are distinct implementations. The experimental variant integrates selected synchronous traps and a limited MRET/CSR demonstration. Full architectural or privileged-ISA compliance has **not** been established.
+**Verification Results: 727 directed checks passed across 43 self-checking testbenches.**
+
+The initial 664 checks across 38 testbenches were reproduced locally on Windows. An additional 63 directed checks across 5 experimental trap-related testbenches were verified through GitHub Actions.
+
+> **Development Status:** The project targets RV32I. The baseline pipeline and the experimental trap-enabled pipeline are distinct implementations. Full RV32I architectural and privileged-ISA compliance has not been established.
 
 ---
 
 ## Project Highlights
 
-- **Two processor architectures:** Single-cycle and five-stage pipeline.
-- **32-bit datapath:** 32 general-purpose registers, including a hardwired zero register.
-- **Arithmetic and logic:** Integer operations, shifts, and signed/unsigned comparisons.
-- **Memory operations:** Byte, halfword, and word loads/stores.
+- **Two CPU architectures:** Single-cycle and five-stage pipelined processor.
+- **32-bit datapath:** 32 general-purpose registers, including the hardwired zero register.
+- **Arithmetic and logic:** Integer arithmetic, shifts, and signed/unsigned comparisons.
+- **Memory access:** Byte, halfword, and word loads/stores.
 - **Control flow:** Conditional branches, JAL, and JALR.
-- **Pipeline forwarding:** Resolves supported register dependencies.
+- **Data forwarding:** Handles supported pipeline register dependencies.
 - **Hazard detection:** Load-use stalls and bubble insertion.
-- **Control hazard handling:** Branch redirection and pipeline flushing.
-- **Self-checking verification:** Module-level and processor-level testbenches.
-- **Experimental trap-enabled pipeline:** Integrates illegal-instruction, misaligned instruction-target, and misaligned load/store detection, trap redirection, and a limited MRET/CSR demonstration in a separate processor variant.
-- **Continuous integration:** GitHub Actions runs the baseline regression suites and experimental trap tests on Ubuntu.
+- **Control hazards:** Branch redirection and pipeline flushing.
+- **Experimental trap integration:** Selected synchronous exceptions, trap redirection, and context capture.
+- **Limited MRET/CSR support:** Experimental trap return and MEPC update.
+- **Automated verification:** 43 self-checking testbenches with 727 directed checks.
+- **Continuous integration:** GitHub Actions runs automated regression tests.
 
 ---
 
@@ -35,9 +38,9 @@ The project demonstrates processor datapath design, instruction decoding, contro
 
 ### 1. Single-Cycle Processor
 
-The single-cycle architecture executes each instruction through the complete datapath within one clock cycle.
+The single-cycle CPU processes each instruction through the complete datapath within one clock cycle.
 
-Its main components include:
+Main components:
 
 - Program Counter (PC)
 - Instruction Memory
@@ -49,35 +52,51 @@ Its main components include:
 - Data Memory
 - Next-PC and Writeback Logic
 
-This implementation provides the foundation for the pipelined processor design.
-
 ### 2. Five-Stage Pipelined Processor
 
 The pipelined processor divides instruction execution into five stages:
 
 | Stage | Name | Function |
 |---|---|---|
-| IF | Instruction Fetch | Fetch the next instruction |
-| ID | Instruction Decode | Decode instructions and read registers |
-| EX | Execute | Perform ALU operations and resolve branches |
-| MEM | Memory Access | Perform load and store operations |
-| WB | Writeback | Write results to the register file |
+| IF | Instruction Fetch | Fetch instructions |
+| ID | Instruction Decode | Decode and read registers |
+| EX | Execute | Arithmetic, logic, and branch evaluation |
+| MEM | Memory Access | Load and store operations |
+| WB | Writeback | Update destination registers |
 
-Pipeline registers preserve instruction data and control signals between stages.
-
-The architecture includes data forwarding, load-use hazard detection, pipeline stalls, instruction validity tracking, and control-flow flushing.
-
-**[View the Architecture Documentation and Pipeline Diagram](docs/architecture.md)**
+The implementation includes pipeline registers, forwarding, load-use hazard detection, stalls, instruction validity tracking, and control-flow flushing.
 
 ### 3. Experimental Trap-Enabled Pipeline
 
-`pipeline/processor_pipeline_trap_top.v` is a separate experimental processor top-level. It integrates the existing pipeline datapath with `exception_detection_unit`, `trap_controller`, and `ex_mem_trap_reg`. The implementation demonstrates exception cause/context capture (`mepc`, `mcause`, `mtval`), trap-vector redirection, selected pipeline flushing, and a limited trap-return path. The baseline `pipeline/processor_pipeline_top.v` remains independently tested. This experimental implementation is **not** a complete privileged RISC-V processor, and precise exceptions under every combination of concurrent events have not been proven.
+The experimental implementation is located in:
+
+`pipeline/processor_pipeline_trap_top.v`
+
+It integrates selected exception-handling functionality with the five-stage pipeline.
+
+Supported experimental functionality includes:
+
+- Illegal-instruction detection.
+- Misaligned instruction-target detection.
+- Misaligned load/store detection.
+- Exception priority handling between MEM, EX, and ID.
+- Trap-vector redirection.
+- Exception-context capture using MEPC, MCAUSE, and MTVAL.
+- Limited MRET return handling.
+- Limited MEPC write functionality.
+- Selected pipeline flushing and exception side-effect verification.
+
+The baseline `pipeline/processor_pipeline_top.v` remains independently tested.
+
+**Important:** The experimental implementation is not a complete privileged RISC-V processor. Precise exception behavior across every possible concurrent pipeline condition has not been proven.
+
+[View Architecture Documentation](docs/architecture.md)
 
 ---
 
 ## Verification Results
 
-The following directed checks passed during the recorded simulation runs:
+The following directed checks passed in recorded verification runs.
 
 | Verification Area | Passed Checks |
 |---|---:|
@@ -92,15 +111,25 @@ The following directed checks passed during the recorded simulation runs:
 | Exception Detection Module | 18 |
 | Trap Controller Module | 20 |
 | EX/MEM Trap Register | 16 |
-| Experimental Trap Pipeline: Illegal Instruction, Misaligned Load/Store, and Misaligned Jump | 20 |
+| Experimental Trap Pipeline Integration | 20 |
 | Experimental Exception Priority Integration | 12 |
 | Experimental Trap Return / MRET | 9 |
 | Experimental LHU Alignment | 5 |
-| **Total** | **710** |
+| Precise Exception Side Effects | 17 |
+| **TOTAL** | **727** |
 
-All reported checks passed in their respective recorded simulation runs. The **664 baseline checks across 38 testbenches** were reproduced locally on Windows. The **46 additional experimental checks across 4 testbenches** passed in GitHub Actions on the feature branch.
+### Verification Summary
 
-These are **710 directed verification checks**, not 710 independent programs or evidence of exhaustive architectural verification. Passing tests do not establish full RV32I or privileged-ISA compliance.
+- **43 self-checking testbenches**
+- **727 directed verification checks**
+- **664 baseline checks** across 38 testbenches
+- **63 additional experimental checks** across 5 testbenches
+- **17 new precise-exception side-effect checks**
+- Automated verification through GitHub Actions
+
+All reported checks passed in their respective recorded simulation runs.
+
+These are directed checks, not 727 independent processor programs or evidence of exhaustive architectural correctness.
 
 ---
 
@@ -109,143 +138,149 @@ These are **710 directed verification checks**, not 710 independent programs or 
 ```text
 RV32I-RISC-V-Processor-v2/
 |
-|-- rtl/                 # Single-cycle CPU and shared RTL modules
-|-- tb/                  # Single-cycle verification testbenches
-|-- pipeline/            # Baseline pipeline and experimental trap-enabled variant
-|   |-- tb/              # Pipeline and experimental testbenches
-|-- .github/workflows/    # GitHub Actions automated verification
-|-- docs/                # Engineering documentation
-|-- run_tests.bat         # Automated single-cycle verification
-|-- run_pipeline_tests.bat # Automated pipeline verification
-|-- README.md            # Project overview
+|-- rtl/
+|   # Single-cycle processor and shared RTL
+|
+|-- tb/
+|   # Single-cycle testbenches
+|
+|-- pipeline/
+|   # Baseline pipelined CPU
+|   # Experimental trap-enabled CPU
+|   |
+|   |-- tb/
+|       # Pipeline and experimental testbenches
+|
+|-- docs/
+|   # Engineering documentation
+|
+|-- .github/
+|   |-- workflows/
+|       |-- verilog-tests.yml
+|
+|-- run_tests.bat
+|-- run_pipeline_tests.bat
+|-- README.md
 ```
-
-The pipelined processor reuses selected RTL modules from the `rtl/` directory.
 
 ---
 
 ## Automated Single-Cycle Verification
 
-The single-cycle processor includes an automated regression test suite consisting of **21 self-checking testbenches and 373 directed verification checks**.
+The single-cycle processor includes:
 
-All 21 testbenches and 373 checks have passed locally using Icarus Verilog on Windows.
+- 21 self-checking testbenches.
+- 373 directed verification checks.
+
+These checks were reproduced locally using Icarus Verilog on Windows.
 
 ### Requirements
 
-- Windows operating system
-- Icarus Verilog installed
+- Icarus Verilog
 - `iverilog` and `vvp` available in the system PATH
 
-### Running All Tests
+### Run Tests
 
-1. Download or clone this repository.
-2. Open the repository's root directory.
-3. Double-click `run_tests.bat`, or execute it from Windows Command Prompt:
+From the repository root directory on Windows:
 
 ```bat
 run_tests.bat
 ```
 
-The script automatically compiles and executes all 21 single-cycle testbenches and stops if a compilation or simulation error occurs.
-
-### Expected Final Output
+Expected successful summary:
 
 ```text
 ALL 21 TESTBENCHES PASSED
 Single-Cycle Verification: 373 Checks
 ```
 
-The 373 directed checks cover unit-level functionality, processor integration, instruction decoding, memory operations, branches, jumps, alignment, boundary conditions, and unsupported instructions.
-
-**Scope:** This automated script currently covers the single-cycle processor only. The pipeline and experimental exception module results documented separately in this README are not included in this script.
-
 ---
 
 ## Automated Pipeline Verification
 
-The five-stage pipelined processor includes an automated verification suite covering pipeline registers, forwarding, hazard detection, control flow, memory operations, and processor-level integration.
+The baseline pipeline regression suite contains:
 
-The suite also includes independent tests for experimental exception and trap handling modules.
+- 17 self-checking testbenches.
+- 291 directed verification checks.
 
-**Verification Results:**
-- 17 self-checking testbenches
-- 291 directed checks passed
-- Successfully reproduced locally using Icarus Verilog on Windows
+It covers pipeline registers, forwarding, hazard detection, control flow, memory operations, integration, and independent exception-related modules.
 
-### Requirements
+### Run Tests
 
-- Windows operating system
-- Icarus Verilog installed
-- `iverilog` and `vvp` available in the system PATH
-
-### Running Pipeline Tests
-
-1. Download or clone this repository.
-2. Open the repository's root directory.
-3. Double-click `run_pipeline_tests.bat`, or run it from Windows Command Prompt:
+On Windows:
 
 ```bat
 run_pipeline_tests.bat
 ```
 
-The script compiles and executes all 17 testbenches and stops if a compilation or simulation error occurs.
-
-### Expected Final Output
+Expected successful summary:
 
 ```text
 ALL 17 PIPELINE TESTBENCHES PASSED
 Pipeline and Independent Module Verification: 291 Checks
 ```
 
-### Verification Scope
-
-The automated suite covers:
-- Pipeline registers and instruction validity
-- Data forwarding and load-use hazards
-- Pipeline stalls and control-flow flushing
-- Processor integration and memory edge cases
-- Pipeline control and safety
-- Independent exception detection and trap modules
-
-**Important:** The original 17-testbench pipeline regression covers the baseline processor and independent trap-related module tests. A **separate** experimental trap-enabled pipeline is integrated and tested through additional GitHub Actions steps; it is not part of the original 291-check baseline suite.
-
-These directed tests do not establish full RV32I architectural compliance.
+The original pipeline regression does not include the additional experimental trap integration testbenches.
 
 ---
 
 ## GitHub Actions Continuous Integration
 
-The workflow at `.github/workflows/verilog-tests.yml` runs on Ubuntu for pushes, pull requests, and manual dispatch. It installs Icarus Verilog and executes:
+The GitHub Actions workflow is located at:
 
-- **21 single-cycle testbenches:** 373 directed checks.
-- **17 baseline pipeline / independent module testbenches:** 291 directed checks.
-- **Experimental trap pipeline compilation:** build-only check, not counted as a directed verification check.
-- **4 experimental integration testbenches:** 20 trap cases, 12 priority checks, 9 trap-return checks, and 5 LHU alignment checks (46 directed checks).
+`.github/workflows/verilog-tests.yml`
 
-The badge at the top displays the workflow status. The experimental verification results reported here reflect recorded runs on `feature/trap-integration`; confirm the same workflow has passed on `main` after any future merge.
+The workflow runs on Ubuntu and supports:
+
+- Push events
+- Pull requests
+- Manual workflow dispatch
+
+It installs Icarus Verilog and executes the following verification suites:
+
+| Test Suite | Testbenches | Directed Checks |
+|---|---:|---:|
+| Single-Cycle | 21 | 373 |
+| Baseline Pipeline and Independent Modules | 17 | 291 |
+| Experimental Trap Pipeline | 1 | 20 |
+| Exception Priority | 1 | 12 |
+| Experimental Trap Return | 1 | 9 |
+| LHU Alignment | 1 | 5 |
+| Precise Exception Side Effects | 1 | 17 |
+| **TOTAL** | **43** | **727** |
+
+The workflow additionally compiles the experimental trap-enabled processor top-level.
+
+Compilation-only checks are not included in the directed-check total.
+
+### Precise Exception Side-Effect Test
+
+Testbench:
+
+`pipeline/tb/processor_pipeline_trap_precise_tb.v`
+
+GitHub Actions step:
+
+`Test Precise Exception Side Effects`
+
+This additional regression contains 17 directed checks targeting exception handling and the preservation or suppression of instruction side effects in selected pipeline scenarios.
+
+The test passed in the recorded GitHub Actions run.
+
+These tests strengthen confidence in the implementation but do not prove complete precise-exception correctness for all possible instruction combinations.
 
 ---
 
-## Running the ALU Test
+## Standalone ALU Verification
 
-The ALU can be verified independently using **Icarus Verilog**.
-
-### Requirements
-
-Install Icarus Verilog, which provides the `iverilog` compiler and the `vvp` simulation runtime.
-
-### Compile and Run
-
-From the repository root directory, execute:
+The ALU can be independently compiled and simulated using Icarus Verilog.
 
 ```bash
 iverilog -Wall -g2012 -s alu_tb -o alu_test.vvp rtl/alu.v tb/alu_tb.v
 vvp alu_test.vvp
 ```
 
-### Expected Output
-
-The testbench should finish with:
+Expected output:
 
 ```text
 Passed: 22
@@ -253,18 +288,7 @@ Failed: 0
 ALU VERIFICATION PASSED
 ```
 
-### Test Coverage
-
-The ALU testbench includes 22 directed checks covering:
-
-- Addition and subtraction
-- Bitwise AND, OR, and XOR
-- Logical and arithmetic shifts
-- Signed and unsigned comparisons
-- Arithmetic boundary conditions
-- Shift boundary conditions
-
-The expected output is based on the reviewed RTL and testbench. Users can reproduce the result by running the commands above.
+The ALU tests cover arithmetic, bitwise logic, shifts, signed/unsigned comparisons, and boundary conditions.
 
 ---
 
@@ -275,38 +299,42 @@ The expected output is based on the reviewed RTL and testbench. Users can reprod
 | Verilog HDL | Processor hardware design |
 | RISC-V RV32I | Target instruction set |
 | Icarus Verilog | RTL compilation and simulation |
-| EDA Playground | Browser-based simulation during development |
-| Git and GitHub | Version control and documentation |
+| EDA Playground | Browser-based simulation |
+| Git | Version control |
+| GitHub | Source-code hosting |
+| GitHub Actions | Automated continuous integration |
 
 ---
 
 ## Design Limitations
 
-This is a computer engineering hardware development project, not a production-ready CPU.
+This is an educational computer engineering hardware project, not a production-ready CPU.
 
-Current limitations include:
+Known limitations include:
 
-- Full RV32I architectural compliance has not been demonstrated.
-- ECALL and EBREAK architectural trap handling is incomplete.
-- FENCE is modeled as a simplified no-operation.
-- The baseline verified pipelined processor does not integrate trap handling; a separate experimental pipeline variant does. Its precise-exception behavior has not been exhaustively verified.
-- Full privileged CSR support is not implemented; MRET and CSR behavior in the experimental processor is deliberately limited, and complete standards conformance is not claimed.
-- Memory models are primarily designed for functional simulation.
-- FPGA timing closure and physical implementation have not been demonstrated.
+- Full RV32I architectural compliance has not been established.
+- ECALL and EBREAK architectural trap handling remains incomplete.
+- FENCE is implemented as a simplified no-operation.
+- The baseline pipelined processor does not integrate the experimental trap controller.
+- The experimental pipeline supports selected synchronous exceptions but has not been exhaustively verified.
+- Full privileged CSR support is not implemented.
+- MRET and MEPC update functionality remain limited.
+- Memory models are primarily intended for functional simulation.
+- FPGA synthesis, timing closure, and physical implementation have not been demonstrated.
 - Verification is directed rather than exhaustive.
 
 ---
 
 ## Future Development
 
-Planned improvements include:
+Potential improvements include:
 
-- Further validating and refining precise exception and trap handling in the experimental pipeline.
-- Extending system instruction and CSR support.
-- Expanding GitHub Actions coverage with additional corner cases and regression checks.
-- Expanding instruction-level corner-case coverage.
-- Exploring FPGA synthesis and timing analysis.
-- Extending processor-level verification.
+- Further validation of precise exception handling.
+- Additional concurrent pipeline corner-case tests.
+- Expanded CSR and system-instruction support.
+- Formal verification and instruction-set compliance testing.
+- FPGA synthesis and implementation.
+- Timing analysis and hardware validation.
 
 ---
 
@@ -314,11 +342,11 @@ Planned improvements include:
 
 | Document | Description |
 |---|---|
-| [Architecture](docs/architecture.md) | Processor design and pipeline diagram |
-| [Instruction Set](docs/instruction-set.md) | Instruction-level design and support |
-| [Verification Plan](docs/verification-plan.md) | Verification strategy |
+| [Architecture](docs/architecture.md) | Processor design and pipeline architecture |
+| [Instruction Set](docs/instruction-set.md) | Supported instruction behavior |
+| [Verification Plan](docs/verification-plan.md) | Verification methodology |
 | [Requirements](docs/requirements.md) | Engineering requirements |
-| [Progress Log](docs/progress-log.md) | Development history |
+| [Progress Log](docs/progress-log.md) | Project development history |
 
 ---
 
@@ -330,8 +358,10 @@ Planned improvements include:
 
 ## Author
 
-**Abdulaziz Al-Modawi Al-Qahtani**  
-Computer Engineering Student  
+**Abdulaziz Al-Modawi Al-Qahtani**
+
+Computer Engineering Student
+
 King Khalid University, Saudi Arabia
 
 *Designed, implemented, and verified as a computer engineering hardware development project.*
