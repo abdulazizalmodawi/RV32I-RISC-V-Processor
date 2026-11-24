@@ -117,7 +117,6 @@ jobs:
           echo "ALL 17 PIPELINE TESTBENCHES PASSED"
           echo "TOTAL: 38 TESTBENCHES COMPLETED"
 
-
       - name: Compile Experimental Trap Pipeline
         shell: bash
         run: |
@@ -126,7 +125,6 @@ jobs:
             -o trap_pipeline.vvp \
             rtl/*.v pipeline/*.v
           echo "EXPERIMENTAL TRAP PIPELINE COMPILATION PASSED"
-
 
       - name: Test Experimental Trap Pipeline
         shell: bash
@@ -138,7 +136,6 @@ jobs:
             pipeline/tb/processor_pipeline_trap_top_tb.v
           vvp trap_test.vvp
 
-
       - name: Test Pipeline Exception Priority
         shell: bash
         run: |
@@ -148,7 +145,6 @@ jobs:
             rtl/*.v pipeline/*.v \
             pipeline/tb/processor_pipeline_trap_priority_tb.v
           vvp trap_priority.vvp
-
 
       - name: Test Experimental Trap Return
         shell: bash
@@ -160,7 +156,6 @@ jobs:
             pipeline/tb/processor_pipeline_trap_return_tb.v
           vvp trap_return_test.vvp
 
-
       - name: Test LHU Alignment
         shell: bash
         run: |
@@ -170,3 +165,13 @@ jobs:
             rtl/*.v pipeline/*.v \
             pipeline/tb/processor_pipeline_trap_lhu_tb.v
           vvp trap_lhu_test.vvp
+
+      - name: Test Precise Exception Side Effects
+        shell: bash
+        run: |
+          set -e
+          iverilog -g2012 -s processor_pipeline_trap_precise_tb \
+            -o trap_precise_test.vvp \
+            rtl/*.v pipeline/*.v \
+            pipeline/tb/processor_pipeline_trap_precise_tb.v
+          vvp trap_precise_test.vvp
