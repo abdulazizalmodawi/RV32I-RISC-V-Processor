@@ -1,147 +1,189 @@
-# RV32I Processor - Verification Plan
 
-Project: RV32I-RISC-V-Processor-v2
-Document Version: 0.1
-Status: Draft
+# RV32I Processor — Verification Plan
+
+**Project:** RV32I-RISC-V-Processor-v2  
+**Document Version:** 1.0  
+**Status:** Implemented Directed Verification Plan  
+**Last Updated:** November 24, 2026
 
 ## 1. Objective
 
-This document defines the verification strategy for the RV32I processor.
+Define the verification methodology, recorded regression results, acceptance criteria, and remaining verification limitations for the RV32I processor project.
 
-Verification will be performed at module, instruction, and processor levels.
-
-A module will only be considered complete after its required tests have passed.
+The repository implements a single-cycle CPU, a baseline five-stage pipeline, and a separate experimental trap-enabled pipeline.
 
 ## 2. Verification Environment
 
-- RTL Language: Verilog HDL
-- Simulator: Icarus Verilog
-- Development Environment: EDA Playground / Local Tools
-- Test Method: Self-checking Testbenches
-- Version Control: GitHub
+| Component | Technology |
+|---|---|
+| RTL | Verilog HDL |
+| Simulator | Icarus Verilog |
+| Test Method | Self-checking testbenches |
+| Local Development | Windows / EDA Playground |
+| Continuous Integration | GitHub Actions on Ubuntu |
+| Version Control | GitHub |
 
-## 3. Module Verification
+## 3. Verification Levels
 
-| Test ID | Module | Verification Objective |
-|---|---|---|
-| TEST-001 | ALU | Verify arithmetic and logical operations |
-| TEST-002 | Register File | Verify register reads, writes, and x0 behavior |
-| TEST-003 | Program Counter | Verify reset, sequential execution, and PC selection |
-| TEST-004 | Immediate Generator | Verify immediate extraction and sign extension |
-| TEST-005 | Instruction Decoder | Verify supported instruction decoding |
-| TEST-006 | Control Unit | Verify control signals for each instruction |
-| TEST-007 | Data Memory Interface | Verify loads, stores, and byte enables |
-| TEST-008 | Writeback Logic | Verify correct register writeback data |
-| TEST-009 | Branch and Jump Logic | Verify branch conditions and jump targets |
+### 3.1 Unit Verification
 
-## 4. ALU Verification
+Tests cover:
 
-The ALU testbench will cover:
+- ALU
+- Register File
+- Program Counter
+- Immediate Generator
+- Control Unit
+- ALU Control
+- Branch Control
+- Instruction Memory
+- Data Memory
+- Next-PC Logic
 
-- Addition and subtraction
-- Bitwise AND, OR, and XOR
-- Logical left and right shifts
-- Arithmetic right shift
-- Signed comparisons
-- Unsigned comparisons
-- Zero and boundary values
-- Overflow and carry behavior where defined
+### 3.2 Processor Integration
 
-Expected results will be calculated independently and compared against actual outputs.
+Tests cover:
 
-## 5. Register File Verification
+- Arithmetic and logical execution
+- Register writeback
+- Memory reads and writes
+- Branches and jumps
+- Signed and unsigned calculations
+- Immediate boundary cases
+- Unsupported instruction encodings
+- Instruction alignment
+- Simplified FENCE handling
+- Unsupported SYSTEM instruction behavior
 
-- Write and read valid registers
-- Verify two independent read ports
-- Verify writes to register x0 are ignored
-- Verify register x0 always returns zero
-- Verify behavior after reset
-- Verify simultaneous read and write behavior
+### 3.3 Pipeline Verification
 
-## 6. Instruction-Level Verification
+Tests cover:
 
-The following instruction groups will be tested:
+- Pipeline registers
+- Instruction validity tracking
+- Data forwarding
+- Load-use hazard detection
+- Pipeline stalls and bubbles
+- Control-flow flushing
+- Load-forwarding diagnostics
+- Stall/flush diagnostics
+- Memory and safety behavior
 
-- Register arithmetic and logic
-- Immediate arithmetic and logic
-- Load and store instructions
-- Conditional branches
-- JAL and JALR
-- LUI and AUIPC
-- System and memory-ordering instructions
+### 3.4 Experimental Exception Verification
 
-Each instruction will have directed tests covering normal operation and relevant boundary conditions.
+Tests cover selected:
 
-## 7. Processor-Level Verification
-
-After module integration, the processor will execute test programs that verify:
-
-1. Sequential instruction execution
-2. Register dependencies
-3. Arithmetic calculations
-4. Memory reads and writes
-5. Conditional branches
-6. Jump and link operations
-7. Signed and unsigned operations
-8. Reset behavior
-9. Invalid or unsupported instruction handling
-
-## 8. Exception Verification
-
-Once exception behavior is defined, tests will cover:
-
-- Illegal instruction detection
+- Illegal instructions
 - Misaligned instruction targets
-- Misaligned memory accesses
-- ECALL handling
-- EBREAK handling
+- Misaligned load/store addresses
+- Exception priority between MEM, EX, and ID
+- Trap-vector redirection
+- MEPC, MCAUSE, and MTVAL capture
+- Limited MRET and MEPC update behavior
+- LHU alignment
+- Precise exception side effects
 
-Exception tests will be updated when the trap interface is finalized.
+## 4. Recorded Verification Results
 
-## 9. Automated Regression Testing
+| Test Suite | Testbenches | Passed Checks |
+|---|---:|---:|
+| Single-Cycle Processor | 21 | 373 |
+| Baseline Pipeline and Independent Modules | 17 | 291 |
+| Experimental Trap Pipeline | 1 | 20 |
+| Exception Priority | 1 | 12 |
+| Trap Return / MRET | 1 | 9 |
+| LHU Alignment | 1 | 5 |
+| Precise Exception Side Effects | 1 | 17 |
+| **TOTAL** | **43** | **727** |
 
-Testbenches should report:
+The 664 baseline checks were reproduced locally using Icarus Verilog on Windows.
 
-- Test identifier
-- Expected result
-- Actual result
-- PASS or FAIL status
-- Total passed and failed tests
+The 63 additional experimental checks were verified through GitHub Actions.
 
-A regression run will execute the available testbenches and report the final outcome.
+These are directed checks rather than exhaustive proofs of architectural correctness.
 
-## 10. Verification Evidence
+## 5. Automated Regression
 
-Test evidence will be stored in the results directory.
+GitHub Actions workflow:
 
-Evidence may include:
+`.github/workflows/verilog-tests.yml`
 
-- Simulation logs
-- Test summaries
-- Waveform files
-- Screenshots
-- Bug reports
+The workflow:
 
-Screenshots are supplementary evidence and do not replace automated checks.
+1. Checks out the repository.
+2. Installs Icarus Verilog.
+3. Runs single-cycle tests.
+4. Runs baseline pipeline and independent module tests.
+5. Compiles the experimental trap-enabled pipeline.
+6. Runs five experimental integrated testbenches.
+7. Reports success or failure for each step.
 
-## 11. Acceptance Criteria
+The workflow runs for pushes, pull requests, and manual dispatch.
 
-A module can be marked as verified only when:
+## 6. Testbench Reporting
 
-- Its required tests execute successfully.
-- Actual outputs match expected outputs.
-- No unexplained simulation errors remain.
-- Known limitations are documented.
-- Relevant test evidence is available.
+Each self-checking testbench should report:
 
-Passing a limited test suite does not establish complete RV32I compliance.
+- Expected behavior
+- Actual behavior or relevant diagnostic information
+- Passed checks
+- Failed checks
+- Final test status
 
-## 12. Verification Status
+A failed required check should terminate verification with a nonzero simulation exit status.
 
-No RTL verification has been completed.
+## 7. Verification Evidence
 
-All tests are currently planned.
+Acceptable evidence includes:
 
-## 13. Next Step
+- Source-controlled testbenches
+- GitHub Actions execution logs
+- Simulation output
+- Relevant waveform traces
+- Recorded regression summaries
+- Documented bug fixes
 
-Review the processor architecture and begin implementation and unit verification of the 32-bit ALU.
+Screenshots are supplementary evidence and do not replace executable verification.
+
+## 8. Acceptance Criteria
+
+The tested implementation is accepted for its documented scope when:
+
+1. Required testbenches compile.
+2. All documented checks pass.
+3. No unexplained simulation failures remain.
+4. Regressions pass after RTL changes.
+5. Known limitations are recorded.
+6. Documentation matches the tested implementation.
+
+## 9. Verification Limitations
+
+The existing test suites do not demonstrate:
+
+- Complete RV32I architectural compliance
+- Complete privileged CSR behavior
+- Complete ECALL and EBREAK trap handling
+- Exhaustive precise-exception behavior
+- Exhaustive instruction and pipeline combinations
+- Formal correctness
+- FPGA timing closure
+- Physical hardware validation
+
+## 10. Future Verification
+
+Recommended extensions:
+
+- Formal verification of selected properties
+- Additional simultaneous pipeline-event tests
+- Extended privileged instruction tests
+- Architectural ISA compliance testing
+- Synthesis and timing analysis
+- FPGA-based execution tests
+
+## 11. Current Status
+
+**Recorded regression status:** PASS
+
+**Total:** 727 directed checks across 43 self-checking testbenches.
+
+The project remains an educational, directed-tested processor implementation rather than a fully certified RISC-V implementation.
